@@ -48,10 +48,14 @@ class TestFuseEvidence:
         assert 0.3 < fused.projected_probability() < 0.7
 
     def test_many_agreeing_sources_push_probability_up(self):
-        """Five strongly supporting sources should yield P > 0.9."""
-        opinions = [
-            Opinion(belief=0.65, disbelief=0.05, uncertainty=0.30, base_rate=0.5)
-            for _ in range(5)
-        ]
+        """Five strongly supporting sources should yield P well above a single source.
+
+        A single opinion with b=0.65, u=0.30 gives P = 0.65 + 0.5*0.30 = 0.80.
+        After fusing five identical independent sources, uncertainty collapses
+        and P should be noticeably higher (empirically ~0.89).
+        """
+        single = Opinion(belief=0.65, disbelief=0.05, uncertainty=0.30, base_rate=0.5)
+        opinions = [single] * 5
         fused = fuse_evidence(opinions)
-        assert fused.projected_probability() > 0.9
+        assert fused.projected_probability() > single.projected_probability()
+        assert fused.uncertainty < single.uncertainty

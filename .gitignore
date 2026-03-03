@@ -1,50 +1,85 @@
-# Byte-compiled / optimized / DLL files
+# ── Python ────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
 
-# Distribution / packaging
+# ── Distribution / packaging ──────────────────────────────────────
 dist/
 build/
 *.egg-info/
 *.egg
+MANIFEST
 
-# Poetry
+# ── Poetry ────────────────────────────────────────────────────────
 poetry.lock
 
-# Virtual environments
+# ── Virtual environments ──────────────────────────────────────────
 .venv/
 venv/
+venv*/
+env/
 ENV/
+.env/
+__pypackages__/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
+# ── Environment variables ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
+# ── Testing ───────────────────────────────────────────────────────
 .pytest_cache/
 htmlcov/
 .coverage
 .coverage.*
 coverage.xml
+*.cover
 
-# Environment variables
-.env
-.env.local
+# ── Type checkers ─────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
 
-# Cache
+# ── Linters ───────────────────────────────────────────────────────
+.ruff_cache/
+
+# ── IDEs ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Cache / temp ──────────────────────────────────────────────────
 .cache/
 *.cache
+*.tmp
+*.temp
+/tmp/
 
-# Mypy
-.mypy_cache/
+# ── trustandverify specific ───────────────────────────────────────
+# File cache backend storage
+.trustandverify_cache/
+cache/
+reports.db
 
-# Ruff
-.ruff_cache/
+# Output files generated during testing/demos
+output.json
+*.jsonld
+*.report.md
+*.report.html
+
+# Streamlit
+.streamlit/secrets.toml
