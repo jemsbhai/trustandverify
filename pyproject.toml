@@ -1,0 +1,127 @@
+[tool.poetry]
+name = "trustandverify"
+version = "0.1.0"
+description = "Agentic knowledge verification using Subjective Logic confidence algebra"
+authors = ["Muntaser Syed <jemsbhai@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/jemsbhai/trustandverify"
+repository = "https://github.com/jemsbhai/trustandverify"
+documentation = "https://github.com/jemsbhai/trustandverify#readme"
+keywords = [
+    "knowledge-verification", "subjective-logic", "confidence-algebra",
+    "agentic-ai", "hallucination-detection", "provenance", "json-ld",
+    "uncertainty-quantification", "fact-checking",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+packages = [{include = "trustandverify", from = "src"}]
+
+# ── Core dependencies (always installed) ──────────────────────────────────────
+[tool.poetry.dependencies]
+python = "^3.10"
+jsonld-ex = ">=0.6"          # Subjective Logic confidence algebra
+httpx = ">=0.24"             # Async HTTP client for search backends
+
+# ── Optional extras ───────────────────────────────────────────────────────────
+# Search backends
+tavily-python = {version = ">=0.3", optional = true}
+
+# LLM backends
+openai    = {version = ">=1.0",  optional = true}
+anthropic = {version = ">=0.25", optional = true}
+litellm   = {version = ">=1.0",  optional = true}   # gemini + many others
+ollama    = {version = ">=0.1",  optional = true}
+
+# Storage backends
+asyncpg   = {version = ">=0.28", optional = true}    # postgres
+neo4j     = {version = ">=5.0",  optional = true}
+motor     = {version = ">=3.0",  optional = true}    # mongodb async
+redis     = {version = ">=5.0",  optional = true}
+
+# Export
+weasyprint = {version = ">=60",  optional = true}    # pdf
+
+# CLI
+typer = {version = ">=0.9",  optional = true}
+rich  = {version = ">=13.0", optional = true}
+
+# UI
+streamlit = {version = ">=1.30", optional = true}
+
+[tool.poetry.extras]
+tavily    = ["tavily-python"]
+serpapi   = []                   # uses httpx directly
+brave     = []                   # uses httpx directly
+bing      = []                   # uses httpx directly
+openai    = ["openai"]
+anthropic = ["anthropic"]
+gemini    = ["litellm"]
+ollama    = ["ollama"]
+sqlite    = []                   # stdlib, no extra dep
+postgres  = ["asyncpg"]
+neo4j     = ["neo4j"]
+mongo     = ["motor"]
+redis     = ["redis"]
+ui        = ["streamlit"]
+cli       = ["typer", "rich"]
+pdf       = ["weasyprint"]
+all       = [
+    "tavily-python", "openai", "anthropic", "litellm", "ollama",
+    "asyncpg", "neo4j", "motor", "redis",
+    "weasyprint", "typer", "rich", "streamlit",
+]
+
+# ── Dev dependencies ───────────────────────────────────────────────────────────
+[tool.poetry.group.dev.dependencies]
+pytest         = "^8.0"
+pytest-asyncio = "^0.24"
+pytest-cov     = "^6.0"
+ruff           = ">=0.2"
+mypy           = ">=1.8"
+
+# ── Entry points ───────────────────────────────────────────────────────────────
+[tool.poetry.scripts]
+trustandverify = "trustandverify.cli.main:app"
+
+# ── Build ──────────────────────────────────────────────────────────────────────
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# ── Pytest ─────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths    = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: requires external API keys or services",
+    "slow: takes more than 5 seconds",
+]
+
+# ── Ruff ───────────────────────────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py310"
+line-length    = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+# ── Mypy ───────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version         = "3.10"
+strict                 = true
+ignore_missing_imports = true
