@@ -96,7 +96,7 @@ mypy           = ">=1.8"
 
 # ── Entry points ───────────────────────────────────────────────────────────────
 [tool.poetry.scripts]
-trustandverify = "trustandverify.cli.main:app"
+trustandverify = "trustandverify.cli.main:main"
 
 # ── Build ──────────────────────────────────────────────────────────────────────
 [build-system]
