@@ -46,18 +46,26 @@ class SQLiteStorage:
 
     def __init__(self, path: str = "trustandverify.db") -> None:
         self._path = path
+        # For :memory: databases, reuse a single connection — each new
+        # sqlite3.connect(':memory:') call creates an entirely separate DB.
+        self._persistent_conn: sqlite3.Connection | None = None
         self._init_db()
 
     def _connect(self) -> sqlite3.Connection:
+        if self._path == ":memory:":
+            if self._persistent_conn is None:
+                self._persistent_conn = sqlite3.connect(":memory:", check_same_thread=False)
+                self._persistent_conn.row_factory = sqlite3.Row
+            return self._persistent_conn
         conn = sqlite3.connect(self._path)
         conn.row_factory = sqlite3.Row
         return conn
 
     def _init_db(self) -> None:
-        with self._connect() as conn:
-            conn.execute(_CREATE_REPORTS)
-            conn.execute(_CREATE_CLAIMS)
-            conn.commit()
+        conn = self._connect()
+        conn.execute(_CREATE_REPORTS)
+        conn.execute(_CREATE_CLAIMS)
+        conn.commit()
 
     # ── Report operations ──────────────────────────────────────────
 
@@ -65,29 +73,29 @@ class SQLiteStorage:
         data = _report_to_dict(report)
 
         def _save() -> None:
-            with self._connect() as conn:
-                conn.execute(
-                    "INSERT OR REPLACE INTO reports (id, query, summary, created_at, data) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (
-                        report.id,
-                        report.query,
-                        report.summary,
-                        report.created_at.isoformat(),
-                        json.dumps(data),
-                    ),
-                )
-                conn.commit()
+            conn = self._connect()
+            conn.execute(
+                "INSERT OR REPLACE INTO reports (id, query, summary, created_at, data) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    report.id,
+                    report.query,
+                    report.summary,
+                    report.created_at.isoformat(),
+                    json.dumps(data),
+                ),
+            )
+            conn.commit()
 
         await asyncio.to_thread(_save)
         return report.id
 
     async def get_report(self, report_id: str) -> Report | None:
         def _get() -> dict | None:
-            with self._connect() as conn:
-                row = conn.execute(
-                    "SELECT data FROM reports WHERE id = ?", (report_id,)
-                ).fetchone()
+            conn = self._connect()
+            row = conn.execute(
+                "SELECT data FROM reports WHERE id = ?", (report_id,)
+            ).fetchone()
             return json.loads(row["data"]) if row else None
 
         data = await asyncio.to_thread(_get)
@@ -95,12 +103,12 @@ class SQLiteStorage:
 
     async def list_reports(self, limit: int = 50) -> list[ReportSummary]:
         def _list() -> list[dict]:
-            with self._connect() as conn:
-                rows = conn.execute(
-                    "SELECT id, query, created_at, data FROM reports "
-                    "ORDER BY created_at DESC LIMIT ?",
-                    (limit,),
-                ).fetchall()
+            conn = self._connect()
+            rows = conn.execute(
+                "SELECT id, query, created_at, data FROM reports "
+                "ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
             return [dict(r) for r in rows]
 
         rows = await asyncio.to_thread(_list)
