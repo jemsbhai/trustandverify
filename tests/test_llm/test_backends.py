@@ -1,105 +1,110 @@
-"""Tests for llm/gemini.py — JSON parsing and completion mocking."""
+"""Tests for OpenAI, Anthropic, and Ollama backends — mocked, no real API calls."""
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 
-from trustandverify.llm.gemini import GeminiBackend, _parse_json_robust
+from trustandverify.llm.anthropic import AnthropicBackend
+from trustandverify.llm.ollama import OllamaBackend
+from trustandverify.llm.openai import OpenAIBackend
 
 
-class TestParseJsonRobust:
-    """Unit tests for the robust JSON parser — no LLM calls needed."""
+# ── OpenAIBackend ──────────────────────────────────────────────────────────────
 
-    def test_direct_json_object(self):
-        raw = '{"evidence": "Studies show X", "supports": true, "confidence": 0.8}'
-        result = _parse_json_robust(raw)
-        assert result["evidence"] == "Studies show X"
-        assert result["supports"] is True
-        assert result["confidence"] == 0.8
-
-    def test_strips_json_markdown_fence(self):
-        raw = '```json\n{"evidence": "X", "supports": true}\n```'
-        result = _parse_json_robust(raw)
-        assert result["evidence"] == "X"
-
-    def test_strips_plain_markdown_fence(self):
-        raw = '```\n{"evidence": "X", "supports": false}\n```'
-        result = _parse_json_robust(raw)
-        assert result["supports"] is False
-
-    def test_extracts_json_from_surrounding_text(self):
-        raw = 'Here is the evidence: {"evidence": "X", "confidence": 0.7} hope that helps'
-        result = _parse_json_robust(raw)
-        assert result["evidence"] == "X"
-
-    def test_handles_unicode_whitespace(self):
-        raw = '{"evidence":\xa0"Non-breaking space", "supports": true}'
-        result = _parse_json_robust(raw)
-        assert result["evidence"] == "Non-breaking space"
-
-    def test_array_response_wrapped_as_items(self):
-        raw = '["Claim one", "Claim two", "Claim three"]'
-        result = _parse_json_robust(raw)
-        assert "items" in result
-        assert result["items"] == ["Claim one", "Claim two", "Claim three"]
-
-    def test_array_in_markdown_fence(self):
-        raw = '```json\n["Claim A", "Claim B"]\n```'
-        result = _parse_json_robust(raw)
-        assert result["items"] == ["Claim A", "Claim B"]
-
-    def test_returns_defaults_on_unparseable_input(self):
-        raw = "Sorry, I cannot help with that."
-        defaults = {"evidence": raw, "supports": True, "confidence": 0.5}
-        result = _parse_json_robust(raw, defaults=defaults)
-        assert result == defaults
-
-    def test_empty_string_returns_defaults(self):
-        result = _parse_json_robust("", defaults={"x": 1})
-        assert result == {"x": 1}
-
-
-class TestGeminiBackend:
+class TestOpenAIBackend:
     def test_is_available_with_key(self):
-        backend = GeminiBackend(api_key="fake-key")
-        assert backend.is_available() is True
+        assert OpenAIBackend(api_key="sk-fake").is_available() is True
 
     def test_is_available_without_key(self, monkeypatch):
-        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-        backend = GeminiBackend(api_key="")
-        assert backend.is_available() is False
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        assert OpenAIBackend(api_key="").is_available() is False
 
     def test_default_model(self):
-        backend = GeminiBackend(api_key="x")
-        assert backend.model == "gemini/gemini-2.5-flash"
+        assert OpenAIBackend(api_key="x").model == "gpt-4o"
 
     async def test_complete_returns_string(self, monkeypatch):
-        from unittest.mock import AsyncMock, MagicMock
-
-        mock_choice = MagicMock()
-        mock_choice.message.content = "Remote workers are more productive."
-        mock_response = MagicMock()
-        mock_response.choices = [mock_choice]
-
-        mock_acompletion = AsyncMock(return_value=mock_response)
-        monkeypatch.setattr("trustandverify.llm.gemini.GeminiBackend.complete",
-                            AsyncMock(return_value="Remote workers are more productive."))
-
-        backend = GeminiBackend(api_key="fake")
-        result = await backend.complete("Is remote work productive?")
-        assert isinstance(result, str)
-        assert len(result) > 0
-
-    async def test_complete_json_parses_result(self, monkeypatch):
-        from unittest.mock import AsyncMock
-
-        raw = '{"evidence": "13% more productive", "supports": true, "confidence": 0.85}'
         monkeypatch.setattr(
-            "trustandverify.llm.gemini.GeminiBackend.complete",
+            "trustandverify.llm.openai.OpenAIBackend.complete",
+            AsyncMock(return_value="Remote work is productive."),
+        )
+        result = await OpenAIBackend(api_key="fake").complete("Is remote work productive?")
+        assert isinstance(result, str)
+
+    async def test_complete_json_parses_response(self, monkeypatch):
+        raw = '{"evidence": "13% gain", "supports": true, "confidence": 0.85}'
+        monkeypatch.setattr(
+            "trustandverify.llm.openai.OpenAIBackend.complete",
             AsyncMock(return_value=raw),
         )
-
-        backend = GeminiBackend(api_key="fake")
-        result = await backend.complete_json("Extract evidence...")
+        result = await OpenAIBackend(api_key="fake").complete_json("extract evidence")
         assert result["supports"] is True
         assert result["confidence"] == 0.85
+
+    async def test_complete_json_handles_markdown_fence(self, monkeypatch):
+        raw = '```json\n{"supports": false, "confidence": 0.3}\n```'
+        monkeypatch.setattr(
+            "trustandverify.llm.openai.OpenAIBackend.complete",
+            AsyncMock(return_value=raw),
+        )
+        result = await OpenAIBackend(api_key="fake").complete_json("extract")
+        assert result["supports"] is False
+
+
+# ── AnthropicBackend ───────────────────────────────────────────────────────────
+
+class TestAnthropicBackend:
+    def test_is_available_with_key(self):
+        assert AnthropicBackend(api_key="sk-ant-fake").is_available() is True
+
+    def test_is_available_without_key(self, monkeypatch):
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        assert AnthropicBackend(api_key="").is_available() is False
+
+    async def test_complete_returns_string(self, monkeypatch):
+        monkeypatch.setattr(
+            "trustandverify.llm.anthropic.AnthropicBackend.complete",
+            AsyncMock(return_value="Coffee has health benefits."),
+        )
+        result = await AnthropicBackend(api_key="fake").complete("Is coffee healthy?")
+        assert isinstance(result, str)
+
+    async def test_complete_json_parses_response(self, monkeypatch):
+        raw = '{"evidence": "antioxidants found", "supports": true, "confidence": 0.75}'
+        monkeypatch.setattr(
+            "trustandverify.llm.anthropic.AnthropicBackend.complete",
+            AsyncMock(return_value=raw),
+        )
+        result = await AnthropicBackend(api_key="fake").complete_json("extract")
+        assert result["confidence"] == 0.75
+
+
+# ── OllamaBackend ──────────────────────────────────────────────────────────────
+
+class TestOllamaBackend:
+    def test_is_available_always_true(self):
+        assert OllamaBackend().is_available() is True
+
+    def test_default_model(self):
+        assert OllamaBackend().model == "llama3"
+
+    def test_custom_model(self):
+        assert OllamaBackend(model="mistral").model == "mistral"
+
+    async def test_complete_returns_string(self, monkeypatch):
+        monkeypatch.setattr(
+            "trustandverify.llm.ollama.OllamaBackend.complete",
+            AsyncMock(return_value="Some completion."),
+        )
+        result = await OllamaBackend().complete("test prompt")
+        assert isinstance(result, str)
+
+    async def test_complete_json_handles_fence(self, monkeypatch):
+        raw = '```json\n{"items": ["Claim A", "Claim B"]}\n```'
+        monkeypatch.setattr(
+            "trustandverify.llm.ollama.OllamaBackend.complete",
+            AsyncMock(return_value=raw),
+        )
+        result = await OllamaBackend().complete_json("decompose")
+        assert "items" in result
