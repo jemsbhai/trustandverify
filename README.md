@@ -65,6 +65,22 @@ MarkdownExporter().render_to_file(report, "report.md")
 
 ---
 
+## Byzantine-Resistant Fusion
+
+Byzantine fusion is **off by default** — standard cumulative fusion is used. When enabled, it removes discordant, low-trust sources before fusion:
+
+```python
+config = TrustConfig(
+    enable_byzantine=True,         # activate Byzantine filtering
+    byzantine_threshold=0.15,      # discord score cutoff
+    byzantine_min_agents=2,        # never reduce below this many
+)
+```
+
+When Byzantine is off, `score_claim()` still runs a **lightweight diagnostic** and returns `meta["byzantine_recommended"]` — a flag indicating whether filtering would help, along with cohesion and discord details. This lets you surface a recommendation in your UI without changing the scoring behavior.
+
+---
+
 ## CLI
 
 ```bash
@@ -83,10 +99,12 @@ trustandverify ui   # Launch Streamlit dashboard
 | No evidence at all | 0.5 | `b=0.00, d=0.00, u=1.00` |
 | Sources violently disagree | 0.5 | `b=0.40, d=0.40, u=0.20` |
 
-Confidence algebra (from [`jsonld-ex`](https://pypi.org/project/jsonld-ex/)):
+Confidence algebra (from [`jsonld-ex`](https://pypi.org/project/jsonld-ex/) 0.7.0):
 - **Cumulative fusion** — more independent agreeing sources → lower uncertainty
+- **Byzantine-resistant fusion** — optionally filter discordant, low-trust sources before fusion
 - **Trust discount** — `.gov`/`.edu` sources weighted higher than Reddit
-- **Pairwise conflict detection** — surfaces where sources disagree, quantified
+- **Cohesion scoring** — measures overall source agreement (0–1)
+- **Pairwise conflict & opinion distance** — surfaces where sources disagree, quantified with both evidential tension and metric distance
 
 ---
 
@@ -106,7 +124,7 @@ pip install trustandverify[all]                         # everything
 ```
 trustandverify/
 ├── core/        — TrustAgent, pipeline, models, config
-├── scoring/     — Subjective Logic algebra (wraps jsonld-ex)
+├── scoring/     — Subjective Logic algebra (wraps jsonld-ex 0.7.0: fusion, Byzantine, cohesion, distance)
 ├── search/      — SearchBackend protocol + Tavily, Brave, Bing, SerpAPI
 ├── llm/         — LLMBackend protocol + Gemini, OpenAI, Anthropic, Ollama
 ├── storage/     — StorageBackend protocol + memory, SQLite, Postgres, Neo4j
