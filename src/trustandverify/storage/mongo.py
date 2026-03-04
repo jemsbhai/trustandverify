@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from trustandverify.core.models import Claim, Report, ReportSummary
 from trustandverify.storage.sqlite import _dict_to_report, _report_to_dict
@@ -69,7 +69,7 @@ class MongoStorage:
             summaries.append(ReportSummary(
                 id=doc["_id"],
                 query=doc.get("query", ""),
-                created_at=datetime.fromisoformat(doc.get("created_at", datetime.utcnow().isoformat())),
+                created_at=datetime.fromisoformat(doc.get("created_at", datetime.now(timezone.utc).isoformat())),
                 num_claims=len(doc.get("claims", [])),
             ))
         return summaries

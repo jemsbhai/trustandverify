@@ -34,7 +34,7 @@ packages = [{include = "trustandverify", from = "src"}]
 # ── Core dependencies (always installed) ──────────────────────────────────────
 [tool.poetry.dependencies]
 python = "^3.10"
-jsonld-ex = ">=0.6"          # Subjective Logic confidence algebra
+jsonld-ex = ">=0.7.0"          # Subjective Logic confidence algebra
 httpx = ">=0.24"             # Async HTTP client for search backends
 
 # ── Optional extras ───────────────────────────────────────────────────────────
@@ -95,6 +95,8 @@ ruff           = ">=0.2"
 mypy           = ">=1.8"
 
 # ── Entry points ───────────────────────────────────────────────────────────────
+typer = "^0.24.1"
+rich = "^14.3.3"
 [tool.poetry.scripts]
 trustandverify = "trustandverify.cli.main:main"
 
@@ -110,6 +112,11 @@ asyncio_mode = "auto"
 markers = [
     "integration: requires external API keys or services",
     "slow: takes more than 5 seconds",
+]
+filterwarnings = [
+    "error",
+    # AsyncMock coroutines from mocked async methods leak across tests on Windows
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 # ── Ruff ───────────────────────────────────────────────────────────────────────

@@ -8,7 +8,15 @@ from trustandverify.scoring.conflict import (
     detect_conflicts_within_claim,
     pairwise_conflict,
 )
-from trustandverify.scoring.fusion import averaging_fuse, cumulative_fuse, fuse_evidence
+from trustandverify.scoring.fusion import (
+    averaging_fuse,
+    cohesion_score,
+    cumulative_fuse,
+    diagnose_byzantine,
+    fuse_evidence,
+    fuse_evidence_byzantine,
+    opinion_distance,
+)
 from trustandverify.scoring.opinions import flip_opinion, opinion_summary, scalar_to_opinion
 from trustandverify.scoring.trust import apply_trust_discount, estimate_source_trust, trust_discount
 
@@ -21,8 +29,12 @@ __all__ = [
     "opinion_summary",
     # fusion.py
     "fuse_evidence",
+    "fuse_evidence_byzantine",
+    "diagnose_byzantine",
     "cumulative_fuse",
     "averaging_fuse",
+    "cohesion_score",
+    "opinion_distance",
     # trust.py
     "estimate_source_trust",
     "apply_trust_discount",

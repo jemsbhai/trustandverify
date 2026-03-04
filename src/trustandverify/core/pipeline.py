@@ -188,7 +188,7 @@ def score(claim: Claim, config: TrustConfig) -> tuple[Claim, Conflict | None]:
     Returns:
         (updated Claim, Conflict | None)
     """
-    fused_opinion, verdict, conflict_data = score_claim(
+    fused_opinion, verdict, conflict_data, _meta = score_claim(
         claim.evidence, conflict_threshold=config.conflict_threshold
     )
     claim.opinion = fused_opinion

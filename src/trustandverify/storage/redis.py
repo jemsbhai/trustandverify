@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from trustandverify.core.models import Claim, Report, ReportSummary
 from trustandverify.storage.sqlite import _dict_to_report, _report_to_dict
@@ -79,7 +79,7 @@ class RedisStorage:
             summaries.append(ReportSummary(
                 id=data["id"],
                 query=data.get("query", ""),
-                created_at=datetime.fromisoformat(data.get("created_at", datetime.utcnow().isoformat())),
+                created_at=datetime.fromisoformat(data.get("created_at", datetime.now(timezone.utc).isoformat())),
                 num_claims=len(data.get("claims", [])),
             ))
         return summaries

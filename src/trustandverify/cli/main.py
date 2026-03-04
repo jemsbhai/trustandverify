@@ -12,7 +12,7 @@ try:
     from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich.table import Table
     from rich import print as rprint
-except ImportError:
+except ImportError:  # pragma: no cover
     print(
         "CLI requires extras: pip install trustandverify[cli]",
         file=sys.stderr,
@@ -162,5 +162,5 @@ def main() -> None:
     app()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

@@ -49,12 +49,29 @@ class TestDetectConflictsWithinClaim:
         assert result is not None
         for key in (
             "conflict_degree",
+            "opinion_distance",
             "supporting_opinion",
             "contradicting_opinion",
             "num_supporting",
             "num_contradicting",
         ):
             assert key in result
+
+    def test_opinion_distance_is_proper_metric(self):
+        """opinion_distance should satisfy d(A,A)=0 unlike pairwise_conflict."""
+        # Two identical sides should have distance 0
+        op = Opinion(belief=0.5, disbelief=0.2, uncertainty=0.3, base_rate=0.5)
+        result = detect_conflicts_within_claim([op], [op], threshold=0.0)
+        if result is not None:
+            assert result["opinion_distance"] == 0.0
+
+    def test_opinion_distance_in_range(self):
+        """opinion_distance should be in [0, 1]."""
+        support = [Opinion(belief=0.75, disbelief=0.05, uncertainty=0.20, base_rate=0.5)]
+        contra = [Opinion(belief=0.05, disbelief=0.75, uncertainty=0.20, base_rate=0.5)]
+        result = detect_conflicts_within_claim(support, contra, threshold=0.05)
+        assert result is not None
+        assert 0.0 <= result["opinion_distance"] <= 1.0
 
     def test_counts_are_correct(self):
         support = [

@@ -12,7 +12,7 @@ from jsonld_ex.confidence_algebra import (
     pairwise_conflict,
 )
 
-from trustandverify.scoring.fusion import fuse_evidence
+from trustandverify.scoring.fusion import fuse_evidence, opinion_distance
 
 __all__ = ["detect_conflicts_within_claim", "pairwise_conflict", "conflict_metric"]
 
@@ -51,12 +51,14 @@ def detect_conflicts_within_claim(
     fused_against = fuse_evidence(contradicting_opinions)
 
     score = pairwise_conflict(fused_for, fused_against)
+    dist = opinion_distance(fused_for, fused_against)
 
     if score <= threshold:
         return None
 
     return {
         "conflict_degree": round(float(score), 4),
+        "opinion_distance": round(float(dist), 4),
         "supporting_opinion": {
             "belief": round(float(fused_for.belief), 4),
             "disbelief": round(float(fused_for.disbelief), 4),

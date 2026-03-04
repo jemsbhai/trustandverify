@@ -42,6 +42,20 @@ class TrustConfig:
     enable_cache: bool = True
     """Whether to use the cache layer at all."""
 
+    # ── Byzantine fusion ─────────────────────────────────────────
+    enable_byzantine: bool = False
+    """Whether to use Byzantine-resistant fusion (default: off).
+    When off, a lightweight diagnostic still flags whether
+    Byzantine filtering would be recommended."""
+
+    byzantine_threshold: float = 0.15
+    """Discord score above which a source may be removed (Byzantine)
+    or flagged (diagnostic)."""
+
+    byzantine_min_agents: int = 2
+    """Never reduce below this many evidence pieces during
+    Byzantine filtering."""
+
     # ── Output ─────────────────────────────────────────────────────
     export_formats: list[str] = field(default_factory=lambda: ["jsonld"])
     """Default export formats when calling agent.verify()."""
