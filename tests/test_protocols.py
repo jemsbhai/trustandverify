@@ -11,6 +11,7 @@ import pytest
 
 from trustandverify.cache.file_cache import FileCache
 from trustandverify.cache.protocol import CacheBackend
+from trustandverify.cache.redis_cache import RedisCache
 from trustandverify.export.html import HtmlExporter
 from trustandverify.export.jsonld import JsonLdExporter
 from trustandverify.export.markdown import MarkdownExporter
@@ -28,7 +29,12 @@ from trustandverify.search.protocol import SearchBackend
 from trustandverify.search.serpapi import SerpAPISearch
 from trustandverify.search.tavily import TavilySearch
 from trustandverify.storage.memory import InMemoryStorage
+from trustandverify.storage.mongo import MongoStorage
+from trustandverify.storage.neo4j import Neo4jStorage
+from trustandverify.storage.postgres import PostgresStorage
 from trustandverify.storage.protocol import StorageBackend
+from trustandverify.storage.redis import RedisStorage
+from trustandverify.storage.sqlite import SQLiteStorage
 
 
 # ── SearchBackend ──────────────────────────────────────────────────────────────
@@ -70,8 +76,19 @@ class TestLLMBackendConformance:
 
 
 class TestStorageBackendConformance:
-    def test_in_memory_satisfies_protocol(self):
-        assert isinstance(InMemoryStorage(), StorageBackend)
+    @pytest.mark.parametrize("cls,kwargs", [
+        (InMemoryStorage, {}),
+        (SQLiteStorage, {"path": ":memory:"}),
+        (PostgresStorage, {"dsn": "postgresql://localhost/test"}),
+        (Neo4jStorage, {"password": "fake"}),
+        (MongoStorage, {"uri": "mongodb://localhost:27017"}),
+        (RedisStorage, {"url": "redis://localhost:6379"}),
+    ])
+    def test_satisfies_protocol(self, cls, kwargs):
+        instance = cls(**kwargs)
+        assert isinstance(instance, StorageBackend), (
+            f"{cls.__name__} does not satisfy StorageBackend protocol"
+        )
 
 
 # ── CacheBackend ───────────────────────────────────────────────────────────────
@@ -80,6 +97,10 @@ class TestStorageBackendConformance:
 class TestCacheBackendConformance:
     def test_file_cache_satisfies_protocol(self, tmp_path):
         cache = FileCache(cache_dir=str(tmp_path / "cache"))
+        assert isinstance(cache, CacheBackend)
+
+    def test_redis_cache_satisfies_protocol(self):
+        cache = RedisCache(url="redis://localhost:6379")
         assert isinstance(cache, CacheBackend)
 
 
