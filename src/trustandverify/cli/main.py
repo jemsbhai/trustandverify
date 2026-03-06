@@ -28,6 +28,29 @@ app = typer.Typer(
 )
 console = Console()
 
+_EXPORTERS = {
+    "jsonld": "trustandverify.export.jsonld:JsonLdExporter",
+    "markdown": "trustandverify.export.markdown:MarkdownExporter",
+    "md": "trustandverify.export.markdown:MarkdownExporter",
+    "html": "trustandverify.export.html:HtmlExporter",
+    "pdf": "trustandverify.export.pdf:PdfExporter",
+}
+
+
+def _get_exporter(format_name: str):
+    """Resolve a format name to an exporter instance."""
+    key = format_name.lower().strip()
+    if key not in _EXPORTERS:
+        console.print(
+            f"[bold red]Error:[/] Unknown format [bold]{format_name}[/]. "
+            f"Choose from: {', '.join(sorted(set(_EXPORTERS.values())))}"
+        )
+        raise typer.Exit(1)
+    module_path, cls_name = _EXPORTERS[key].rsplit(":", 1)
+    import importlib
+    mod = importlib.import_module(module_path)
+    return getattr(mod, cls_name)()
+
 
 # ── verify command ─────────────────────────────────────────────────────────────
 
@@ -36,7 +59,7 @@ def verify(
     query: str = typer.Argument(..., help="The research question or claim to verify."),
     claims: int = typer.Option(0, "--claims", "-c", help="Number of claims to decompose into. 0 = auto (3-5)."),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Write JSON-LD report to this file path."),
-    format: str = typer.Option("jsonld", "--format", "-f", help="Output format: jsonld (default)."),
+    format: str = typer.Option("jsonld", "--format", "-f", help="Output format: jsonld, markdown, html, pdf."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Print step-by-step agent progress."),
 ) -> None:
     """Verify a research question or claim against live web evidence."""
@@ -117,9 +140,9 @@ def verify(
 
     # ── Optional file output ──
     if output:
-        from trustandverify.export.jsonld import JsonLdExporter
-        JsonLdExporter().render_to_file(report, output)
-        console.print(f"\n[dim]JSON-LD report written to:[/] {output}")
+        exporter = _get_exporter(format)
+        exporter.render_to_file(report, output)
+        console.print(f"\n[dim]{exporter.format_name} report written to:[/] {output}")
 
 
 # ── ui command ─────────────────────────────────────────────────────────────────

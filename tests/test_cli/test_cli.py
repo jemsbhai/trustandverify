@@ -125,8 +125,41 @@ class TestVerifyCommand:
                 "verify", "Is coffee healthy?", "--output", output_file
             ])
         assert result.exit_code == 0
-        assert "JSON-LD report written to" in result.output
+        assert "report written to" in result.output
         assert (tmp_path / "report.jsonld").exists()
+
+    def test_verify_markdown_format(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("TAVILY_API_KEY", "fake")
+        monkeypatch.setenv("GEMINI_API_KEY", "fake")
+        output_file = str(tmp_path / "report.md")
+        with _cli_env(_make_report()):
+            result = runner.invoke(app, [
+                "verify", "Is coffee healthy?", "--format", "markdown", "--output", output_file
+            ])
+        assert result.exit_code == 0
+        content = (tmp_path / "report.md").read_text(encoding="utf-8")
+        assert "# TrustGraph" in content
+
+    def test_verify_html_format(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("TAVILY_API_KEY", "fake")
+        monkeypatch.setenv("GEMINI_API_KEY", "fake")
+        output_file = str(tmp_path / "report.html")
+        with _cli_env(_make_report()):
+            result = runner.invoke(app, [
+                "verify", "Is coffee healthy?", "--format", "html", "--output", output_file
+            ])
+        assert result.exit_code == 0
+        content = (tmp_path / "report.html").read_text(encoding="utf-8")
+        assert "<!DOCTYPE html>" in content
+
+    def test_verify_unknown_format(self, monkeypatch):
+        monkeypatch.setenv("TAVILY_API_KEY", "fake")
+        monkeypatch.setenv("GEMINI_API_KEY", "fake")
+        with _cli_env(_make_report()):
+            result = runner.invoke(app, [
+                "verify", "Is coffee healthy?", "--format", "xyz", "--output", "out.txt"
+            ])
+        assert result.exit_code == 1
 
     def test_verify_with_claims_option(self, monkeypatch):
         monkeypatch.setenv("TAVILY_API_KEY", "fake")
