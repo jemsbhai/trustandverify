@@ -80,4 +80,8 @@ class TrustAgent:
         # Persist to storage
         await self.storage.save_report(report)  # type: ignore[union-attr]
 
+        # Persist individual claims so they're queryable independently
+        for claim in report.claims:
+            await self.storage.save_claim(claim, report.id)  # type: ignore[union-attr]
+
         return report

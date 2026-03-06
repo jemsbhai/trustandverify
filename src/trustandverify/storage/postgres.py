@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
 
 _CREATE_REPORTS = """
 CREATE TABLE IF NOT EXISTS tv_reports (
@@ -103,8 +103,22 @@ class PostgresStorage:
             ))
         return summaries
 
-    async def save_claim(self, claim: Claim) -> str:
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        pool = await self._get_pool()
+        data = json.dumps(_claim_to_dict(claim))
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO tv_claims (query_id, text, verdict, data) "
+                "VALUES ($1, $2, $3, $4::jsonb)",
+                query_id, claim.text, claim.verdict.value, data,
+            )
         return claim.text
 
     async def get_claims_for_query(self, query_id: str) -> list[Claim]:
-        return []
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT data FROM tv_claims WHERE query_id = $1 ORDER BY id",
+                query_id,
+            )
+        return [_dict_to_claim(json.loads(r["data"])) for r in rows]

@@ -6,10 +6,11 @@ import json
 from datetime import datetime, timezone
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
 
 _REPORT_KEY = "tv:report:{id}"
 _INDEX_KEY = "tv:reports:index"          # Sorted set: score=timestamp, member=id
+_CLAIMS_KEY = "tv:claims:{query_id}"    # List of JSON-encoded claim dicts
 
 
 class RedisStorage:
@@ -84,8 +85,15 @@ class RedisStorage:
             ))
         return summaries
 
-    async def save_claim(self, claim: Claim) -> str:
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        client = await self._get_client()
+        claims_key = _CLAIMS_KEY.format(query_id=query_id)
+        data = json.dumps(_claim_to_dict(claim))
+        await client.rpush(claims_key, data)
         return claim.text
 
     async def get_claims_for_query(self, query_id: str) -> list[Claim]:
-        return []
+        client = await self._get_client()
+        claims_key = _CLAIMS_KEY.format(query_id=query_id)
+        raw_list = await client.lrange(claims_key, 0, -1)
+        return [_dict_to_claim(json.loads(r)) for r in raw_list]

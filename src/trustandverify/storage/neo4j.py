@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
 
 
 class Neo4jStorage:
@@ -98,8 +98,27 @@ class Neo4jStorage:
             ))
         return summaries
 
-    async def save_claim(self, claim: Claim) -> str:
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        driver = self._get_driver()
+        data = json.dumps(_claim_to_dict(claim))
+        async with driver.session() as session:
+            await session.run(
+                "CREATE (c:Claim {query_id: $query_id, text: $text, "
+                "verdict: $verdict, data: $data})",
+                query_id=query_id,
+                text=claim.text,
+                verdict=claim.verdict.value,
+                data=data,
+            )
         return claim.text
 
     async def get_claims_for_query(self, query_id: str) -> list[Claim]:
-        return []
+        driver = self._get_driver()
+        async with driver.session() as session:
+            result = await session.run(
+                "MATCH (c:Claim {query_id: $query_id}) RETURN c.data AS data "
+                "ORDER BY id(c)",
+                query_id=query_id,
+            )
+            records = await result.data()
+        return [_dict_to_claim(json.loads(r["data"])) for r in records]

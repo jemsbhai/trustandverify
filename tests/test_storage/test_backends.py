@@ -77,7 +77,7 @@ async def assert_storage_contract(storage, report: Report) -> None:
     assert retrieved.summary == report.summary
     assert len(retrieved.claims) == len(report.claims)
 
-    # Claims round-trip
+    # Claims round-trip (via report)
     original_claim = report.claims[0]
     retrieved_claim = retrieved.claims[0]
     assert retrieved_claim.text == original_claim.text
@@ -97,6 +97,18 @@ async def assert_storage_contract(storage, report: Report) -> None:
     summaries = await storage.list_reports(limit=10)
     ids = [s.id for s in summaries]
     assert report.id in ids
+
+    # ── save_claim / get_claims_for_query ──
+    for claim in report.claims:
+        await storage.save_claim(claim, report.id)
+
+    claims = await storage.get_claims_for_query(report.id)
+    assert len(claims) == len(report.claims)
+    assert claims[0].text == report.claims[0].text
+    assert claims[0].verdict == report.claims[0].verdict
+
+    # Non-existent query_id returns empty
+    assert await storage.get_claims_for_query("no-such-query") == []
 
 
 # ── InMemoryStorage ────────────────────────────────────────────────────────────

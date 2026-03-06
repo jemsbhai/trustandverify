@@ -42,10 +42,11 @@ class InMemoryStorage:
             for r in reports[:limit]
         ]
 
-    async def save_claim(self, claim: Claim) -> str:
-        # Claims are stored without a query association at this level.
-        # Use save_report() for the full provenance chain.
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        if query_id not in self._claims:
+            self._claims[query_id] = []
+        self._claims[query_id].append(claim)
         return claim.text
 
     async def get_claims_for_query(self, query_id: str) -> list[Claim]:
-        return self._claims.get(query_id, [])
+        return list(self._claims.get(query_id, []))

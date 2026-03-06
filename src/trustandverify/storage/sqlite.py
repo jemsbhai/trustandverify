@@ -123,11 +123,31 @@ class SQLiteStorage:
             ))
         return summaries
 
-    async def save_claim(self, claim: Claim) -> str:
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        data = json.dumps(_claim_to_dict(claim))
+
+        def _save() -> None:
+            conn = self._connect()
+            conn.execute(
+                "INSERT INTO claims (query_id, text, verdict, data) VALUES (?, ?, ?, ?)",
+                (query_id, claim.text, claim.verdict.value, data),
+            )
+            conn.commit()
+
+        await asyncio.to_thread(_save)
         return claim.text
 
     async def get_claims_for_query(self, query_id: str) -> list[Claim]:
-        return []
+        def _get() -> list[dict]:
+            conn = self._connect()
+            rows = conn.execute(
+                "SELECT data FROM claims WHERE query_id = ? ORDER BY id",
+                (query_id,),
+            ).fetchall()
+            return [json.loads(row["data"]) for row in rows]
+
+        rows = await asyncio.to_thread(_get)
+        return [_dict_to_claim(d) for d in rows]
 
 
 # ── Serialisation helpers ──────────────────────────────────────────────────────

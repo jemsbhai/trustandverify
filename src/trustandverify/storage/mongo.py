@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
 
 
 class MongoStorage:
@@ -43,6 +43,11 @@ class MongoStorage:
             self._client = motor.AsyncIOMotorClient(self._uri)
         return self._client[self._database]["reports"]
 
+    def _get_claims_collection(self):
+        # _get_collection ensures _client is initialised
+        self._get_collection()
+        return self._client[self._database]["claims"]
+
     def is_available(self) -> bool:
         return bool(self._uri)
 
@@ -74,8 +79,19 @@ class MongoStorage:
             ))
         return summaries
 
-    async def save_claim(self, claim: Claim) -> str:
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        col = self._get_claims_collection()
+        data = _claim_to_dict(claim)
+        data["query_id"] = query_id
+        await col.insert_one(data)
         return claim.text
 
     async def get_claims_for_query(self, query_id: str) -> list[Claim]:
-        return []
+        col = self._get_claims_collection()
+        cursor = col.find({"query_id": query_id})
+        claims = []
+        async for doc in cursor:
+            doc.pop("_id", None)
+            doc.pop("query_id", None)
+            claims.append(_dict_to_claim(doc))
+        return claims

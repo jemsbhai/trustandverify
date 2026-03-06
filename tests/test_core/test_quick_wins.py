@@ -204,13 +204,24 @@ class TestMemoryStorageGaps:
     async def test_save_claim(self):
         storage = InMemoryStorage()
         claim = Claim(text="Test claim")
-        result = await storage.save_claim(claim)
+        result = await storage.save_claim(claim, "query-1")
         assert result == "Test claim"
 
     async def test_get_claims_for_query(self):
         storage = InMemoryStorage()
         claims = await storage.get_claims_for_query("nonexistent")
         assert claims == []
+
+    async def test_save_and_retrieve_claims(self):
+        storage = InMemoryStorage()
+        c1 = Claim(text="Claim A")
+        c2 = Claim(text="Claim B")
+        await storage.save_claim(c1, "q1")
+        await storage.save_claim(c2, "q1")
+        claims = await storage.get_claims_for_query("q1")
+        assert len(claims) == 2
+        assert claims[0].text == "Claim A"
+        assert claims[1].text == "Claim B"
 
 
 # ── storage/sqlite.py: save_claim + get_claims_for_query ─────────────────────
@@ -220,7 +231,7 @@ class TestSqliteStorageGaps:
     async def test_save_claim(self):
         storage = SQLiteStorage(path=":memory:")
         claim = Claim(text="Test claim")
-        result = await storage.save_claim(claim)
+        result = await storage.save_claim(claim, "query-1")
         assert result == "Test claim"
 
     async def test_get_claims_for_query(self):

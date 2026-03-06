@@ -140,16 +140,30 @@ class TestPostgresStorage:
         assert len(summaries) == 1
         assert summaries[0].id == "test-report-1"
 
-    async def test_save_claim_returns_text(self):
+    async def test_save_and_get_claims(self):
         from trustandverify.storage.postgres import PostgresStorage
-        storage = PostgresStorage(dsn="postgresql://localhost/test")
-        claim = Claim(text="Test claim")
-        assert await storage.save_claim(claim) == "Test claim"
 
-    async def test_get_claims_for_query_returns_empty(self):
-        from trustandverify.storage.postgres import PostgresStorage
+        mock_conn = AsyncMock()
+        mock_conn.execute = AsyncMock()
+        mock_conn.fetch = AsyncMock(return_value=[])
+
+        mock_ctx = AsyncMock()
+        mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        mock_pool = MagicMock()
+        mock_pool.acquire = MagicMock(return_value=mock_ctx)
+
         storage = PostgresStorage(dsn="postgresql://localhost/test")
-        assert await storage.get_claims_for_query("q1") == []
+        storage._pool = mock_pool
+
+        claim = Claim(text="Test claim")
+        result = await storage.save_claim(claim, "query-1")
+        assert result == "Test claim"
+        mock_conn.execute.assert_called_once()
+
+        claims = await storage.get_claims_for_query("query-1")
+        assert claims == []  # mocked to return empty
 
     async def test_get_pool_raises_without_asyncpg(self):
         from trustandverify.storage.postgres import PostgresStorage
@@ -275,15 +289,30 @@ class TestNeo4jStorage:
         summaries = await storage.list_reports(limit=10)
         assert len(summaries) == 1
 
-    async def test_save_claim_returns_text(self):
+    async def test_save_and_get_claims(self):
         from trustandverify.storage.neo4j import Neo4jStorage
-        storage = Neo4jStorage(password="secret")
-        assert await storage.save_claim(Claim(text="Test")) == "Test"
 
-    async def test_get_claims_returns_empty(self):
-        from trustandverify.storage.neo4j import Neo4jStorage
+        mock_run_result = AsyncMock()
+        mock_run_result.data = AsyncMock(return_value=[])
+
+        mock_session = AsyncMock()
+        mock_session.run = AsyncMock(return_value=mock_run_result)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
+
+        mock_driver = MagicMock()
+        mock_driver.session = MagicMock(return_value=mock_session)
+
         storage = Neo4jStorage(password="secret")
-        assert await storage.get_claims_for_query("q1") == []
+        storage._driver = mock_driver
+
+        claim = Claim(text="Test")
+        result = await storage.save_claim(claim, "query-1")
+        assert result == "Test"
+        assert mock_session.run.call_count == 1
+
+        claims = await storage.get_claims_for_query("query-1")
+        assert claims == []
 
     async def test_get_driver_raises_without_neo4j(self):
         from trustandverify.storage.neo4j import Neo4jStorage
@@ -391,15 +420,32 @@ class TestMongoStorage:
         summaries = await storage.list_reports(limit=10)
         assert len(summaries) == 1
 
-    async def test_save_claim_returns_text(self):
+    async def test_save_and_get_claims(self):
         from trustandverify.storage.mongo import MongoStorage
-        storage = MongoStorage()
-        assert await storage.save_claim(Claim(text="Test")) == "Test"
 
-    async def test_get_claims_returns_empty(self):
-        from trustandverify.storage.mongo import MongoStorage
+        mock_claims_col = AsyncMock()
+        mock_claims_col.insert_one = AsyncMock()
+
+        class EmptyAsyncIter:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                raise StopAsyncIteration
+
+        mock_claims_col.find = MagicMock(return_value=EmptyAsyncIter())
+
         storage = MongoStorage()
-        assert await storage.get_claims_for_query("q1") == []
+        storage._get_claims_collection = MagicMock(return_value=mock_claims_col)
+        # Ensure _get_collection doesn't fail
+        storage._get_collection = MagicMock()
+
+        claim = Claim(text="Test")
+        result = await storage.save_claim(claim, "query-1")
+        assert result == "Test"
+        mock_claims_col.insert_one.assert_called_once()
+
+        claims = await storage.get_claims_for_query("query-1")
+        assert claims == []
 
     async def test_get_collection_raises_without_motor(self):
         from trustandverify.storage.mongo import MongoStorage
@@ -507,15 +553,30 @@ class TestRedisStorage:
         summaries = await storage.list_reports(limit=10)
         assert len(summaries) == 0
 
-    async def test_save_claim_returns_text(self):
+    async def test_save_and_get_claims(self):
         from trustandverify.storage.redis import RedisStorage
-        storage = RedisStorage()
-        assert await storage.save_claim(Claim(text="Test")) == "Test"
 
-    async def test_get_claims_returns_empty(self):
-        from trustandverify.storage.redis import RedisStorage
+        stored_lists: dict[str, list] = {}
+
+        mock_client = AsyncMock()
+        mock_client.rpush = AsyncMock(
+            side_effect=lambda k, v: stored_lists.setdefault(k, []).append(v)
+        )
+        mock_client.lrange = AsyncMock(
+            side_effect=lambda k, start, end: stored_lists.get(k, [])
+        )
+
         storage = RedisStorage()
-        assert await storage.get_claims_for_query("q1") == []
+        storage._client = mock_client
+
+        claim = Claim(text="Test")
+        result = await storage.save_claim(claim, "query-1")
+        assert result == "Test"
+        mock_client.rpush.assert_called_once()
+
+        claims = await storage.get_claims_for_query("query-1")
+        assert len(claims) == 1
+        assert claims[0].text == "Test"
 
     async def test_get_client_raises_without_redis(self):
         from trustandverify.storage.redis import RedisStorage

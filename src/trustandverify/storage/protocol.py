@@ -43,11 +43,15 @@ class StorageBackend(Protocol):
         """
         ...
 
-    async def save_claim(self, claim: Claim) -> str:
-        """Persist a single claim.
+    async def save_claim(self, claim: Claim, query_id: str) -> str:
+        """Persist a single claim associated with a query.
+
+        Args:
+            claim:    The Claim to save.
+            query_id: The report/query ID this claim belongs to.
 
         Returns:
-            The claim text (used as ID).
+            The claim text (used as identifier).
         """
         ...
 
