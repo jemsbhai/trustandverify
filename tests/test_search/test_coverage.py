@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from trustandverify.core.models import SearchResult
+from trustandverify.search.brave import BraveSearch
 from trustandverify.search.tavily import TavilySearch
 from trustandverify.search.bing import BingSearch
 from trustandverify.search.serpapi import SerpAPISearch
@@ -103,6 +104,27 @@ class TestTavilySearchFull:
 
         with patch("trustandverify.search.tavily.httpx.AsyncClient", return_value=mock_client):
             results = await TavilySearch(api_key="fake").search("test")
+        assert results == []
+
+
+# ── BraveSearch error paths ────────────────────────────────────────────────────
+
+
+class TestBraveSearchErrors:
+    async def test_http_status_error(self):
+        mock_request = MagicMock()
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(
+            side_effect=httpx.HTTPStatusError("rate limited", request=mock_request, response=mock_response)
+        )
+
+        with patch("trustandverify.search.brave.httpx.AsyncClient", return_value=mock_client):
+            results = await BraveSearch(api_key="fake").search("test")
         assert results == []
 
 
