@@ -124,6 +124,22 @@ class TestGeminiBackendImpl:
             result = await backend.complete_json("extract data")
             assert result == {"score": 0.9}
 
+    async def test_complete_json_returns_defaults_on_garbage(self):
+        """defaults kwarg must propagate to _parse_json_robust."""
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "totally not json"
+
+        mock_litellm = MagicMock()
+        mock_litellm.acompletion = AsyncMock(return_value=mock_response)
+
+        with patch.dict("sys.modules", {"litellm": mock_litellm}):
+            backend = GeminiBackend(api_key="fake")
+            result = await backend.complete_json(
+                "extract", defaults={"evidence": "", "supports": True}
+            )
+            assert result == {"evidence": "", "supports": True}
+
 
 # ── OpenAIBackend ─────────────────────────────────────────────────────────────
 

@@ -53,14 +53,14 @@ class GeminiBackend:
         )
         return str(response.choices[0].message.content)
 
-    async def complete_json(self, prompt: str, system: str = "") -> dict:
+    async def complete_json(self, prompt: str, system: str = "", defaults: dict | None = None) -> dict:
         """Send a prompt and return parsed JSON with robust fallback parsing.
 
         Handles markdown fences, unicode whitespace, and partial JSON —
         ported directly from parse_evidence_json() in trustgraph.jac.
         """
         raw = await self.complete(prompt, system=system)
-        return _parse_json_robust(raw)
+        return _parse_json_robust(raw, defaults=defaults or {})
 
 
 # ── Robust JSON parsing (ported from parse_evidence_json in trustgraph.jac) ──
