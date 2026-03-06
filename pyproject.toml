@@ -109,6 +109,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 testpaths    = ["tests"]
 asyncio_mode = "auto"
+addopts      = "-m 'not integration'"
 markers = [
     "integration: requires external API keys or services",
     "slow: takes more than 5 seconds",

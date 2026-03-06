@@ -17,14 +17,14 @@ class ExportBackend(Protocol):
     format_name: str
     file_extension: str
 
-    def render(self, report: Report) -> str:
-        """Render a report to a string.
+    def render(self, report: Report) -> str | bytes:
+        """Render a report to a string or bytes.
 
         Args:
             report: The Report to render.
 
         Returns:
-            Rendered string (JSON, Markdown, or HTML).
+            Rendered string (JSON, Markdown, HTML) or bytes (PDF).
         """
         ...
 

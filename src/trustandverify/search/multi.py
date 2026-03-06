@@ -49,11 +49,17 @@ class MultiSearch:
         if not available:
             return []
 
-        # Fan out concurrently
+        # Fan out concurrently — return_exceptions=True so one failing
+        # backend doesn't crash the whole pipeline.
         tasks = [b.search(query, max_results) for b in available]
-        all_results_per_backend: list[list[SearchResult]] = await asyncio.gather(
-            *tasks, return_exceptions=False
-        )
+        raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        all_results_per_backend: list[list[SearchResult]] = []
+        for i, result in enumerate(raw_results):
+            if isinstance(result, BaseException):
+                print(f"[MultiSearch] Backend {available[i].name!r} raised: {result}")
+                continue
+            all_results_per_backend.append(result)
 
         # Merge and deduplicate by URL — first seen wins (highest-scoring backend first)
         seen_urls: set[str] = set()

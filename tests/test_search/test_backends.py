@@ -196,3 +196,24 @@ class TestMultiSearch:
         urls = {r.url for r in results}
         assert "https://a.com/1" in urls
         assert "https://b.com/1" in urls
+
+    async def test_tolerates_backend_exception(self):
+        """If one backend raises, the others still contribute results."""
+        r = SearchResult(title="Good", url="https://good.com", content="ok", score=0.9)
+        good = _mock_backend("good", [r])
+        bad = _mock_backend("bad", [])
+        bad.search = AsyncMock(side_effect=RuntimeError("boom"))
+
+        results = await MultiSearch([good, bad]).search("test")
+        assert len(results) == 1
+        assert results[0].url == "https://good.com"
+
+    async def test_returns_empty_when_all_backends_raise(self):
+        """If every backend raises, return empty rather than crashing."""
+        a = _mock_backend("a", [])
+        a.search = AsyncMock(side_effect=RuntimeError("fail a"))
+        b = _mock_backend("b", [])
+        b.search = AsyncMock(side_effect=RuntimeError("fail b"))
+
+        results = await MultiSearch([a, b]).search("test")
+        assert results == []
