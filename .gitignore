@@ -72,7 +72,6 @@ Desktop.ini
 # ── trustandverify specific ───────────────────────────────────────
 # File cache backend storage
 .trustandverify_cache/
-cache/
 reports.db
 
 # Output files generated during testing/demos
