@@ -120,6 +120,29 @@ class TestRedisCacheBackend:
             with pytest.raises(ImportError, match="redis"):
                 await cache._get_client()
 
+    async def test_get_client_creates_client(self):
+        """_get_client() must actually call from_url and store the client."""
+        from trustandverify.cache.redis_cache import RedisCache
+
+        mock_client = AsyncMock()
+        mock_redis_asyncio = MagicMock()
+        mock_redis_asyncio.from_url = AsyncMock(return_value=mock_client)
+
+        mock_redis = MagicMock()
+        mock_redis.asyncio = mock_redis_asyncio
+
+        with patch.dict("sys.modules", {"redis": mock_redis, "redis.asyncio": mock_redis_asyncio}):
+            cache = RedisCache(url="redis://localhost:6379")
+            client = await cache._get_client()
+            assert client is mock_client
+            mock_redis_asyncio.from_url.assert_called_once_with(
+                "redis://localhost:6379", decode_responses=True
+            )
+            # Second call should reuse the cached client
+            client2 = await cache._get_client()
+            assert client2 is mock_client
+            assert mock_redis_asyncio.from_url.call_count == 1
+
     # ── JSON round-trip edge cases ────────────────────────────────
 
     async def test_get_returns_none_on_non_json(self):

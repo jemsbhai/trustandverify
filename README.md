@@ -136,6 +136,15 @@ trustandverify/
 
 ---
 
+## Documentation
+
+- [Getting Started](docs/getting-started.md) — installation, quick start, CLI, Jac integration
+- [Backends Guide](docs/backends.md) — configure search, LLM, storage, cache, and export backends
+- [Confidence Algebra](docs/confidence-algebra.md) — the Subjective Logic mathematics
+- [API Reference](docs/api-reference.md) — full module and function documentation
+
+---
+
 ## References
 
 - Jøsang, A. (2016). *Subjective Logic: A Formalism for Reasoning Under Uncertainty.* Springer.

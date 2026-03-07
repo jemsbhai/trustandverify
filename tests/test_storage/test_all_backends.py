@@ -420,7 +420,8 @@ class TestMongoStorage:
         summaries = await storage.list_reports(limit=10)
         assert len(summaries) == 1
 
-    async def test_save_and_get_claims(self):
+    async def test_save_and_get_claims_empty(self):
+        """get_claims_for_query returns empty list when no docs match."""
         from trustandverify.storage.mongo import MongoStorage
 
         mock_claims_col = AsyncMock()
@@ -434,9 +435,15 @@ class TestMongoStorage:
 
         mock_claims_col.find = MagicMock(return_value=EmptyAsyncIter())
 
+        # Let _get_claims_collection run for real through a mocked _client
+        mock_client = MagicMock()
+        mock_client.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=mock_claims_col))
+        )
+
         storage = MongoStorage()
-        storage._get_claims_collection = MagicMock(return_value=mock_claims_col)
-        # Ensure _get_collection doesn't fail
+        storage._client = mock_client
+        # _get_collection needs to not re-create _client
         storage._get_collection = MagicMock()
 
         claim = Claim(text="Test")
@@ -446,6 +453,52 @@ class TestMongoStorage:
 
         claims = await storage.get_claims_for_query("query-1")
         assert claims == []
+
+    async def test_get_claims_with_documents(self):
+        """get_claims_for_query must iterate docs and deserialise claims."""
+        from trustandverify.storage.mongo import MongoStorage
+        from trustandverify.storage.sqlite import _claim_to_dict
+
+        # Build a real claim dict matching what save_claim stores
+        original_claim = Claim(
+            text="Coffee has antioxidants",
+            verdict=Verdict.SUPPORTED,
+            opinion=Opinion(belief=0.7, disbelief=0.1, uncertainty=0.2, base_rate=0.5),
+        )
+        doc = _claim_to_dict(original_claim)
+        doc["_id"] = "fake-mongo-id"
+        doc["query_id"] = "query-1"
+
+        class DocAsyncIter:
+            def __init__(self, docs):
+                self._docs = list(docs)
+                self._i = 0
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                if self._i >= len(self._docs):
+                    raise StopAsyncIteration
+                val = self._docs[self._i]
+                self._i += 1
+                return val
+
+        mock_claims_col = MagicMock()
+        mock_claims_col.find = MagicMock(return_value=DocAsyncIter([doc]))
+
+        mock_client = MagicMock()
+        mock_client.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=mock_claims_col))
+        )
+
+        storage = MongoStorage()
+        storage._client = mock_client
+        storage._get_collection = MagicMock()
+
+        claims = await storage.get_claims_for_query("query-1")
+        assert len(claims) == 1
+        assert claims[0].text == "Coffee has antioxidants"
+        assert claims[0].verdict == Verdict.SUPPORTED
+        assert abs(claims[0].opinion.belief - 0.7) < 1e-6
 
     async def test_get_collection_raises_without_motor(self):
         from trustandverify.storage.mongo import MongoStorage
