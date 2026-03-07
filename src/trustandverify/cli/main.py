@@ -1,17 +1,13 @@
 """trustandverify CLI — Typer app."""
 
 import asyncio
-import json
 import sys
-from typing import Optional
 
 try:
     import typer
     from rich.console import Console
     from rich.panel import Panel
-    from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich.table import Table
-    from rich import print as rprint
 except ImportError:  # pragma: no cover
     print(
         "CLI requires extras: pip install trustandverify[cli]",
@@ -48,19 +44,29 @@ def _get_exporter(format_name: str):
         raise typer.Exit(1)
     module_path, cls_name = _EXPORTERS[key].rsplit(":", 1)
     import importlib
+
     mod = importlib.import_module(module_path)
     return getattr(mod, cls_name)()
 
 
 # ── verify command ─────────────────────────────────────────────────────────────
 
+
 @app.command()
 def verify(
     query: str = typer.Argument(..., help="The research question or claim to verify."),
-    claims: int = typer.Option(0, "--claims", "-c", help="Number of claims to decompose into. 0 = auto (3-5)."),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Write JSON-LD report to this file path."),
-    format: str = typer.Option("jsonld", "--format", "-f", help="Output format: jsonld, markdown, html, pdf."),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Print step-by-step agent progress."),
+    claims: int = typer.Option(
+        0, "--claims", "-c", help="Number of claims to decompose into. 0 = auto (3-5)."
+    ),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="Write JSON-LD report to this file path."
+    ),
+    format: str = typer.Option(
+        "jsonld", "--format", "-f", help="Output format: jsonld, markdown, html, pdf."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Print step-by-step agent progress."
+    ),
 ) -> None:
     """Verify a research question or claim against live web evidence."""
     from trustandverify.core.agent import TrustAgent
@@ -147,6 +153,7 @@ def verify(
 
 # ── ui command ─────────────────────────────────────────────────────────────────
 
+
 @app.command()
 def ui() -> None:
     """Launch the Streamlit web dashboard."""
@@ -156,22 +163,27 @@ def ui() -> None:
     try:
         import streamlit  # noqa: F401
     except ImportError:
-        console.print("[bold red]Error:[/] Streamlit not installed. Run: pip install trustandverify[ui]")
-        raise typer.Exit(1)
+        console.print(
+            "[bold red]Error:[/] Streamlit not installed. Run: pip install trustandverify[ui]"
+        )
+        raise typer.Exit(1) from None
 
     # Locate the ui/app.py inside the installed package
     try:
         pkg_files = importlib.resources.files("trustandverify.ui")
         app_path = str(pkg_files.joinpath("app.py"))
     except Exception:
-        console.print("[bold red]Error:[/] Could not locate UI app. Is trustandverify installed correctly?")
-        raise typer.Exit(1)
+        console.print(
+            "[bold red]Error:[/] Could not locate UI app. Is trustandverify installed correctly?"
+        )
+        raise typer.Exit(1) from None
 
     console.print("[bold cyan]🔍 Launching TrustGraph UI...[/]")
     subprocess.run(["streamlit", "run", app_path], check=False)
 
 
 # ── version command ────────────────────────────────────────────────────────────
+
 
 @app.command()
 def version() -> None:
@@ -180,6 +192,7 @@ def version() -> None:
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     app()

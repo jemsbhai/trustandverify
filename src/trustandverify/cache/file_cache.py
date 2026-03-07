@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import time
 from pathlib import Path
 from typing import Any
@@ -52,9 +51,7 @@ class FileCache:
         expires_at = time.time() + effective_ttl if effective_ttl > 0 else None
         payload = {"value": value, "expires_at": expires_at}
         try:
-            self._path(key).write_text(
-                json.dumps(payload, default=str), encoding="utf-8"
-            )
+            self._path(key).write_text(json.dumps(payload, default=str), encoding="utf-8")
         except OSError as e:
             print(f"[FileCache] Could not write cache entry: {e}")
 

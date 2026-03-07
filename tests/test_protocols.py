@@ -36,18 +36,20 @@ from trustandverify.storage.protocol import StorageBackend
 from trustandverify.storage.redis import RedisStorage
 from trustandverify.storage.sqlite import SQLiteStorage
 
-
 # ── SearchBackend ──────────────────────────────────────────────────────────────
 
 
 class TestSearchBackendConformance:
-    @pytest.mark.parametrize("cls,kwargs", [
-        (TavilySearch, {"api_key": "fake"}),
-        (BraveSearch, {"api_key": "fake"}),
-        (BingSearch, {"api_key": "fake"}),
-        (SerpAPISearch, {"api_key": "fake"}),
-        (MultiSearch, {"backends": [TavilySearch(api_key="fake")]}),
-    ])
+    @pytest.mark.parametrize(
+        "cls,kwargs",
+        [
+            (TavilySearch, {"api_key": "fake"}),
+            (BraveSearch, {"api_key": "fake"}),
+            (BingSearch, {"api_key": "fake"}),
+            (SerpAPISearch, {"api_key": "fake"}),
+            (MultiSearch, {"backends": [TavilySearch(api_key="fake")]}),
+        ],
+    )
     def test_satisfies_protocol(self, cls, kwargs):
         instance = cls(**kwargs)
         assert isinstance(instance, SearchBackend), (
@@ -59,12 +61,15 @@ class TestSearchBackendConformance:
 
 
 class TestLLMBackendConformance:
-    @pytest.mark.parametrize("cls,kwargs", [
-        (GeminiBackend, {"api_key": "fake"}),
-        (OpenAIBackend, {"api_key": "fake"}),
-        (AnthropicBackend, {"api_key": "fake"}),
-        (OllamaBackend, {}),
-    ])
+    @pytest.mark.parametrize(
+        "cls,kwargs",
+        [
+            (GeminiBackend, {"api_key": "fake"}),
+            (OpenAIBackend, {"api_key": "fake"}),
+            (AnthropicBackend, {"api_key": "fake"}),
+            (OllamaBackend, {}),
+        ],
+    )
     def test_satisfies_protocol(self, cls, kwargs):
         instance = cls(**kwargs)
         assert isinstance(instance, LLMBackend), (
@@ -76,14 +81,17 @@ class TestLLMBackendConformance:
 
 
 class TestStorageBackendConformance:
-    @pytest.mark.parametrize("cls,kwargs", [
-        (InMemoryStorage, {}),
-        (SQLiteStorage, {"path": ":memory:"}),
-        (PostgresStorage, {"dsn": "postgresql://localhost/test"}),
-        (Neo4jStorage, {"password": "fake"}),
-        (MongoStorage, {"uri": "mongodb://localhost:27017"}),
-        (RedisStorage, {"url": "redis://localhost:6379"}),
-    ])
+    @pytest.mark.parametrize(
+        "cls,kwargs",
+        [
+            (InMemoryStorage, {}),
+            (SQLiteStorage, {"path": ":memory:"}),
+            (PostgresStorage, {"dsn": "postgresql://localhost/test"}),
+            (Neo4jStorage, {"password": "fake"}),
+            (MongoStorage, {"uri": "mongodb://localhost:27017"}),
+            (RedisStorage, {"url": "redis://localhost:6379"}),
+        ],
+    )
     def test_satisfies_protocol(self, cls, kwargs):
         instance = cls(**kwargs)
         assert isinstance(instance, StorageBackend), (
@@ -108,12 +116,15 @@ class TestCacheBackendConformance:
 
 
 class TestExportBackendConformance:
-    @pytest.mark.parametrize("cls", [
-        JsonLdExporter,
-        MarkdownExporter,
-        HtmlExporter,
-        PdfExporter,
-    ])
+    @pytest.mark.parametrize(
+        "cls",
+        [
+            JsonLdExporter,
+            MarkdownExporter,
+            HtmlExporter,
+            PdfExporter,
+        ],
+    )
     def test_satisfies_protocol(self, cls):
         instance = cls()
         assert isinstance(instance, ExportBackend), (

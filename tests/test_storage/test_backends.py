@@ -7,10 +7,9 @@ Integration tests hit real infrastructure and are marked @pytest.mark.integratio
 
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from jsonld_ex.confidence_algebra import Opinion
@@ -19,8 +18,8 @@ from trustandverify.core.models import Claim, Conflict, Evidence, Report, Source
 from trustandverify.storage.memory import InMemoryStorage
 from trustandverify.storage.sqlite import SQLiteStorage
 
-
 # ── Shared fixtures ────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def sample_report() -> Report:
@@ -62,6 +61,7 @@ def sample_report() -> Report:
 
 
 # ── Shared contract tests (run against any backend) ───────────────────────────
+
 
 async def assert_storage_contract(storage, report: Report) -> None:
     """Assert that a storage backend satisfies the full CRUD contract."""
@@ -113,16 +113,29 @@ async def assert_storage_contract(storage, report: Report) -> None:
 
 # ── InMemoryStorage ────────────────────────────────────────────────────────────
 
+
 class TestInMemoryStorage:
     async def test_full_contract(self, sample_report):
         await assert_storage_contract(InMemoryStorage(), sample_report)
 
     async def test_list_returns_newest_first(self):
         storage = InMemoryStorage()
-        r1 = Report(id="r1", query="q1", claims=[], conflicts=[], summary="s1",
-                    created_at=datetime(2026, 1, 1, tzinfo=timezone.utc))
-        r2 = Report(id="r2", query="q2", claims=[], conflicts=[], summary="s2",
-                    created_at=datetime(2026, 3, 1, tzinfo=timezone.utc))
+        r1 = Report(
+            id="r1",
+            query="q1",
+            claims=[],
+            conflicts=[],
+            summary="s1",
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        r2 = Report(
+            id="r2",
+            query="q2",
+            claims=[],
+            conflicts=[],
+            summary="s2",
+            created_at=datetime(2026, 3, 1, tzinfo=timezone.utc),
+        )
         await storage.save_report(r1)
         await storage.save_report(r2)
         summaries = await storage.list_reports()
@@ -139,14 +152,21 @@ class TestInMemoryStorage:
     async def test_list_limit(self):
         storage = InMemoryStorage()
         for i in range(5):
-            r = Report(id=f"r{i}", query=f"q{i}", claims=[], conflicts=[], summary="s",
-                       created_at=datetime(2026, 1, i + 1, tzinfo=timezone.utc))
+            r = Report(
+                id=f"r{i}",
+                query=f"q{i}",
+                claims=[],
+                conflicts=[],
+                summary="s",
+                created_at=datetime(2026, 1, i + 1, tzinfo=timezone.utc),
+            )
             await storage.save_report(r)
         summaries = await storage.list_reports(limit=3)
         assert len(summaries) == 3
 
 
 # ── SQLiteStorage ──────────────────────────────────────────────────────────────
+
 
 class TestSQLiteStorage:
     async def test_full_contract(self, sample_report):
@@ -165,10 +185,22 @@ class TestSQLiteStorage:
 
     async def test_list_returns_newest_first(self, tmp_path):
         storage = SQLiteStorage(":memory:")
-        r1 = Report(id="r1", query="q1", claims=[], conflicts=[], summary="s",
-                    created_at=datetime(2026, 1, 1, tzinfo=timezone.utc))
-        r2 = Report(id="r2", query="q2", claims=[], conflicts=[], summary="s",
-                    created_at=datetime(2026, 3, 1, tzinfo=timezone.utc))
+        r1 = Report(
+            id="r1",
+            query="q1",
+            claims=[],
+            conflicts=[],
+            summary="s",
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        r2 = Report(
+            id="r2",
+            query="q2",
+            claims=[],
+            conflicts=[],
+            summary="s",
+            created_at=datetime(2026, 3, 1, tzinfo=timezone.utc),
+        )
         await storage.save_report(r1)
         await storage.save_report(r2)
         summaries = await storage.list_reports()
@@ -184,14 +216,17 @@ class TestSQLiteStorage:
 
 # ── PostgresStorage (unit — mocked) ───────────────────────────────────────────
 
+
 class TestPostgresStorageUnit:
     async def test_is_available_with_dsn(self):
         from trustandverify.storage.postgres import PostgresStorage
+
         s = PostgresStorage(dsn="postgresql://user:pass@localhost/db")
         assert s.is_available() is True
 
     async def test_is_available_without_dsn(self, monkeypatch):
         from trustandverify.storage.postgres import PostgresStorage
+
         monkeypatch.delenv("POSTGRES_DSN", raising=False)
         s = PostgresStorage(dsn="")
         assert s.is_available() is False
@@ -199,14 +234,17 @@ class TestPostgresStorageUnit:
 
 # ── Neo4jStorage (unit — mocked) ──────────────────────────────────────────────
 
+
 class TestNeo4jStorageUnit:
     async def test_is_available_with_password(self):
         from trustandverify.storage.neo4j import Neo4jStorage
+
         s = Neo4jStorage(password="secret")
         assert s.is_available() is True
 
     async def test_is_available_without_password(self, monkeypatch):
         from trustandverify.storage.neo4j import Neo4jStorage
+
         monkeypatch.delenv("NEO4J_PASSWORD", raising=False)
         s = Neo4jStorage(password="")
         assert s.is_available() is False
@@ -214,9 +252,11 @@ class TestNeo4jStorageUnit:
 
 # ── MongoStorage (unit — mocked) ──────────────────────────────────────────────
 
+
 class TestMongoStorageUnit:
     async def test_is_available(self):
         from trustandverify.storage.mongo import MongoStorage
+
         s = MongoStorage(uri="mongodb://localhost:27017")
         assert s.is_available() is True
 
@@ -225,10 +265,12 @@ class TestMongoStorageUnit:
 
         mock_col = AsyncMock()
         mock_col.replace_one = AsyncMock()
-        mock_col.find_one = AsyncMock(return_value={
-            **{"_id": sample_report.id},
-            **_report_to_minimal_dict(sample_report),
-        })
+        mock_col.find_one = AsyncMock(
+            return_value={
+                **{"_id": sample_report.id},
+                **_report_to_minimal_dict(sample_report),
+            }
+        )
 
         s = MongoStorage()
         s._get_collection = MagicMock(return_value=mock_col)
@@ -241,15 +283,16 @@ class TestMongoStorageUnit:
 
 # ── RedisStorage (unit — mocked) ──────────────────────────────────────────────
 
+
 class TestRedisStorageUnit:
     async def test_is_available(self):
         from trustandverify.storage.redis import RedisStorage
+
         s = RedisStorage(url="redis://localhost:6379")
         assert s.is_available() is True
 
     async def test_save_and_get_mocked(self, sample_report):
         from trustandverify.storage.redis import RedisStorage
-        from trustandverify.storage.sqlite import _report_to_dict
 
         stored: dict = {}
 
@@ -270,6 +313,7 @@ class TestRedisStorageUnit:
 
 # ── Integration tests (need real infrastructure) ───────────────────────────────
 
+
 @pytest.mark.integration
 class TestSQLiteIntegration:
     async def test_full_roundtrip_on_disk(self, tmp_path, sample_report):
@@ -281,7 +325,9 @@ class TestSQLiteIntegration:
 class TestPostgresIntegration:
     async def test_full_roundtrip(self, sample_report):
         import os
+
         from trustandverify.storage.postgres import PostgresStorage
+
         dsn = os.environ.get("POSTGRES_DSN")
         if not dsn:
             pytest.skip("POSTGRES_DSN not set")
@@ -293,7 +339,9 @@ class TestPostgresIntegration:
 class TestNeo4jIntegration:
     async def test_full_roundtrip(self, sample_report):
         import os
+
         from trustandverify.storage.neo4j import Neo4jStorage
+
         password = os.environ.get("NEO4J_PASSWORD")
         if not password:
             pytest.skip("NEO4J_PASSWORD not set")
@@ -305,7 +353,9 @@ class TestNeo4jIntegration:
 class TestMongoIntegration:
     async def test_full_roundtrip(self, sample_report):
         import os
+
         from trustandverify.storage.mongo import MongoStorage
+
         uri = os.environ.get("MONGO_URI")
         if not uri:
             pytest.skip("MONGO_URI not set")
@@ -317,7 +367,9 @@ class TestMongoIntegration:
 class TestRedisIntegration:
     async def test_full_roundtrip(self, sample_report):
         import os
+
         from trustandverify.storage.redis import RedisStorage
+
         url = os.environ.get("REDIS_URL")
         if not url:
             pytest.skip("REDIS_URL not set")
@@ -327,7 +379,9 @@ class TestRedisIntegration:
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
 
+
 def _report_to_minimal_dict(report: Report) -> dict:
     """Minimal dict for mocking MongoDB find_one responses."""
     from trustandverify.storage.sqlite import _report_to_dict
+
     return _report_to_dict(report)

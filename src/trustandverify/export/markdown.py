@@ -58,8 +58,8 @@ class MarkdownExporter:
             lines += [
                 f"### {i}. {emoji} {claim.text}",
                 "",
-                f"| Field | Value |",
-                f"|---|---|",
+                "| Field | Value |",
+                "|---|---|",
                 f"| Verdict | **{verdict_str}** |",
                 f"| Projected probability | {p_str} |",
                 f"| Subjective opinion | {bdu} |",

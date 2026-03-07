@@ -100,7 +100,14 @@ class TestOpinionSummary:
     def test_summary_keys(self):
         op = Opinion(belief=0.5, disbelief=0.3, uncertainty=0.2, base_rate=0.5)
         summary = opinion_summary(op)
-        for key in ("belief", "disbelief", "uncertainty", "base_rate", "projected_probability", "verdict"):
+        for key in (
+            "belief",
+            "disbelief",
+            "uncertainty",
+            "base_rate",
+            "projected_probability",
+            "verdict",
+        ):
             assert key in summary
 
     def test_values_are_rounded(self):

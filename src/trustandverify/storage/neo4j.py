@@ -6,7 +6,12 @@ import json
 from datetime import datetime
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import (
+    _claim_to_dict,
+    _dict_to_claim,
+    _dict_to_report,
+    _report_to_dict,
+)
 
 
 class Neo4jStorage:
@@ -29,6 +34,7 @@ class Neo4jStorage:
         password: str | None = None,
     ) -> None:
         import os
+
         self._uri = uri
         self._username = username
         self._password = password or os.environ.get("NEO4J_PASSWORD", "")
@@ -40,8 +46,7 @@ class Neo4jStorage:
                 from neo4j import AsyncGraphDatabase  # type: ignore[import]
             except ImportError as e:
                 raise ImportError(
-                    "Neo4jStorage requires neo4j. "
-                    "Install with: pip install trustandverify[neo4j]"
+                    "Neo4jStorage requires neo4j. Install with: pip install trustandverify[neo4j]"
                 ) from e
             self._driver = AsyncGraphDatabase.driver(
                 self._uri, auth=(self._username, self._password)
@@ -91,11 +96,14 @@ class Neo4jStorage:
         summaries = []
         for r in records:
             data = json.loads(r["data"])
-            summaries.append(ReportSummary(
-                id=r["id"], query=r["query"],
-                created_at=datetime.fromisoformat(r["created_at"]),
-                num_claims=len(data.get("claims", [])),
-            ))
+            summaries.append(
+                ReportSummary(
+                    id=r["id"],
+                    query=r["query"],
+                    created_at=datetime.fromisoformat(r["created_at"]),
+                    num_claims=len(data.get("claims", [])),
+                )
+            )
         return summaries
 
     async def save_claim(self, claim: Claim, query_id: str) -> str:
@@ -116,8 +124,7 @@ class Neo4jStorage:
         driver = self._get_driver()
         async with driver.session() as session:
             result = await session.run(
-                "MATCH (c:Claim {query_id: $query_id}) RETURN c.data AS data "
-                "ORDER BY id(c)",
+                "MATCH (c:Claim {query_id: $query_id}) RETURN c.data AS data ORDER BY id(c)",
                 query_id=query_id,
             )
             records = await result.data()

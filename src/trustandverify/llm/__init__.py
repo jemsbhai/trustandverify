@@ -4,7 +4,6 @@ from trustandverify.llm.anthropic import AnthropicBackend
 from trustandverify.llm.gemini import GeminiBackend
 from trustandverify.llm.ollama import OllamaBackend
 from trustandverify.llm.openai import OpenAIBackend
-from trustandverify.llm.protocol import LLMBackend
 from trustandverify.llm.prompts import (
     assess_claim,
     claim_to_search_query,
@@ -12,6 +11,7 @@ from trustandverify.llm.prompts import (
     extract_evidence,
     write_summary,
 )
+from trustandverify.llm.protocol import LLMBackend
 
 __all__ = [
     "LLMBackend",

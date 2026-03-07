@@ -16,13 +16,11 @@ from __future__ import annotations
 import os
 
 import pytest
-
 from jsonld_ex.confidence_algebra import Opinion
 
 from trustandverify.core.agent import TrustAgent
 from trustandverify.core.config import TrustConfig
 from trustandverify.core.models import Report, Verdict
-
 
 # ── Skip conditions ───────────────────────────────────────────────────────────
 
@@ -38,6 +36,7 @@ pytestmark = [
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_agent(num_claims: int = 2, enable_byzantine: bool = False) -> TrustAgent:
     """Build a TrustAgent with real Tavily + Gemini backends."""
@@ -95,9 +94,7 @@ class TestEndToEnd:
             if claim.opinion is None:
                 continue
             total = claim.opinion.belief + claim.opinion.disbelief + claim.opinion.uncertainty
-            assert abs(total - 1.0) < 1e-6, (
-                f"b+d+u = {total} != 1.0 for claim: {claim.text!r}"
-            )
+            assert abs(total - 1.0) < 1e-6, f"b+d+u = {total} != 1.0 for claim: {claim.text!r}"
 
     async def test_opinion_values_in_range(self, report: Report):
         """All opinion components must be in [0, 1]."""
@@ -106,9 +103,7 @@ class TestEndToEnd:
                 continue
             for attr in ("belief", "disbelief", "uncertainty", "base_rate"):
                 val = getattr(claim.opinion, attr)
-                assert 0.0 <= val <= 1.0, (
-                    f"{attr}={val} out of [0,1] for claim: {claim.text!r}"
-                )
+                assert 0.0 <= val <= 1.0, f"{attr}={val} out of [0,1] for claim: {claim.text!r}"
 
     async def test_claims_have_verdicts(self, report: Report):
         for claim in report.claims:
@@ -116,9 +111,7 @@ class TestEndToEnd:
 
     async def test_claims_have_evidence(self, report: Report):
         for claim in report.claims:
-            assert len(claim.evidence) >= 1, (
-                f"No evidence for claim: {claim.text!r}"
-            )
+            assert len(claim.evidence) >= 1, f"No evidence for claim: {claim.text!r}"
 
     async def test_evidence_has_sources(self, report: Report):
         for claim in report.claims:
@@ -129,9 +122,7 @@ class TestEndToEnd:
     async def test_claims_have_assessments(self, report: Report):
         for claim in report.claims:
             assert isinstance(claim.assessment, str)
-            assert len(claim.assessment) > 10, (
-                f"Assessment too short for claim: {claim.text!r}"
-            )
+            assert len(claim.assessment) > 10, f"Assessment too short for claim: {claim.text!r}"
 
     async def test_report_has_summary(self, report: Report):
         assert isinstance(report.summary, str)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
@@ -70,6 +69,7 @@ def sample_report() -> Report:
 
 # ── MarkdownExporter ───────────────────────────────────────────────────────────
 
+
 class TestMarkdownExporter:
     def test_render_returns_string(self, sample_report):
         result = MarkdownExporter().render(sample_report)
@@ -122,6 +122,7 @@ class TestMarkdownExporter:
 
 # ── HtmlExporter ───────────────────────────────────────────────────────────────
 
+
 class TestHtmlExporter:
     def test_render_returns_string(self, sample_report):
         result = HtmlExporter().render(sample_report)
@@ -164,11 +165,16 @@ class TestHtmlExporter:
         assert "Evidence Conflicts" not in result
 
     def test_escapes_html_in_query(self):
-        from trustandverify.core.models import Report
         from datetime import datetime, timezone
+
+        from trustandverify.core.models import Report
+
         report = Report(
-            id="x", query="<script>alert('xss')</script>",
-            claims=[], conflicts=[], summary="safe",
+            id="x",
+            query="<script>alert('xss')</script>",
+            claims=[],
+            conflicts=[],
+            summary="safe",
             created_at=datetime.now(timezone.utc),
         )
         result = HtmlExporter().render(report)
@@ -185,10 +191,12 @@ class TestHtmlExporter:
 
 # ── PdfExporter ────────────────────────────────────────────────────────────────
 
+
 class TestPdfExporter:
     def test_raises_import_error_without_weasyprint(self, sample_report, monkeypatch):
         """PdfExporter raises a clear ImportError when weasyprint is not installed."""
         import sys
+
         monkeypatch.setitem(sys.modules, "weasyprint", None)
         with pytest.raises((ImportError, TypeError)):
             PdfExporter().render(sample_report)

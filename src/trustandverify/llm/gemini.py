@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 
 
 class GeminiBackend:
@@ -37,8 +36,7 @@ class GeminiBackend:
             from litellm import acompletion  # type: ignore[import]
         except ImportError as e:
             raise ImportError(
-                "GeminiBackend requires litellm. "
-                "Install with: pip install trustandverify[gemini]"
+                "GeminiBackend requires litellm. Install with: pip install trustandverify[gemini]"
             ) from e
 
         messages = []
@@ -53,7 +51,9 @@ class GeminiBackend:
         )
         return str(response.choices[0].message.content)
 
-    async def complete_json(self, prompt: str, system: str = "", defaults: dict | None = None) -> dict:
+    async def complete_json(
+        self, prompt: str, system: str = "", defaults: dict | None = None
+    ) -> dict:
         """Send a prompt and return parsed JSON with robust fallback parsing.
 
         Handles markdown fences, unicode whitespace, and partial JSON —
@@ -64,6 +64,7 @@ class GeminiBackend:
 
 
 # ── Robust JSON parsing (ported from parse_evidence_json in trustgraph.jac) ──
+
 
 def _parse_json_robust(raw: str, defaults: dict | None = None) -> dict:
     """Parse an LLM response as JSON, handling common formatting artefacts.
@@ -86,11 +87,7 @@ def _parse_json_robust(raw: str, defaults: dict | None = None) -> dict:
 
     # Sanitize unicode whitespace (non-breaking space, zero-width, etc.)
     cleaned = (
-        raw
-        .replace("\xa0", " ")
-        .replace("\u200b", "")
-        .replace("\u2009", " ")
-        .replace("\u202f", " ")
+        raw.replace("\xa0", " ").replace("\u200b", "").replace("\u2009", " ").replace("\u202f", " ")
     )
 
     # 1. Direct parse
@@ -108,7 +105,7 @@ def _parse_json_robust(raw: str, defaults: dict | None = None) -> dict:
     if fence_stripped.startswith("```"):
         first_nl = fence_stripped.find("\n")
         if first_nl > 0:
-            fence_stripped = fence_stripped[first_nl + 1:]
+            fence_stripped = fence_stripped[first_nl + 1 :]
         if fence_stripped.rstrip().endswith("```"):
             fence_stripped = fence_stripped.rstrip()[:-3].rstrip()
     try:

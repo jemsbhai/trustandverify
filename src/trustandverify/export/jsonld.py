@@ -64,13 +64,15 @@ class JsonLdExporter:
         # Sources from evidence
         sources = []
         for ev in claim.evidence:
-            sources.append({
-                "title": ev.source.title,
-                "url": ev.source.url,
-                "trust_score": ev.source.trust_score,
-                "evidence": ev.text[:150],
-                "supports": ev.supports_claim,
-            })
+            sources.append(
+                {
+                    "title": ev.source.title,
+                    "url": ev.source.url,
+                    "trust_score": ev.source.trust_score,
+                    "evidence": ev.text[:150],
+                    "supports": ev.supports_claim,
+                }
+            )
         if sources:
             doc["ex:sources"] = sources
 

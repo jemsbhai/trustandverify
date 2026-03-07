@@ -87,7 +87,13 @@ class TestJsonLdExporter:
         doc = json.loads(JsonLdExporter().render(sample_report))
         conf = doc["ex:claims"][0]["ex:confidence"]
         assert conf["@type"] == "ex:SubjectiveOpinion"
-        for field in ("ex:belief", "ex:disbelief", "ex:uncertainty", "ex:baseRate", "ex:projectedProbability"):
+        for field in (
+            "ex:belief",
+            "ex:disbelief",
+            "ex:uncertainty",
+            "ex:baseRate",
+            "ex:projectedProbability",
+        ):
             assert field in conf
             assert isinstance(conf[field], float)
 

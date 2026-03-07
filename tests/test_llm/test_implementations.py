@@ -6,11 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from trustandverify.llm.gemini import GeminiBackend, _parse_json_robust
-from trustandverify.llm.openai import OpenAIBackend
 from trustandverify.llm.anthropic import AnthropicBackend
+from trustandverify.llm.gemini import GeminiBackend, _parse_json_robust
 from trustandverify.llm.ollama import OllamaBackend
-
+from trustandverify.llm.openai import OpenAIBackend
 
 # ── _parse_json_robust (comprehensive) ────────────────────────────────────────
 
@@ -44,7 +43,9 @@ class TestParseJsonRobust:
         assert _parse_json_robust(raw) == {"key": "value"}
 
     def test_unparseable_returns_defaults(self):
-        assert _parse_json_robust("totally not json", defaults={"fallback": True}) == {"fallback": True}
+        assert _parse_json_robust("totally not json", defaults={"fallback": True}) == {
+            "fallback": True
+        }
 
     def test_unparseable_returns_empty_dict_by_default(self):
         assert _parse_json_robust("garbage") == {}

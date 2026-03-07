@@ -31,8 +31,7 @@ class OllamaBackend:
             from ollama import AsyncClient  # type: ignore[import]
         except ImportError as e:
             raise ImportError(
-                "OllamaBackend requires ollama. "
-                "Install with: pip install trustandverify[ollama]"
+                "OllamaBackend requires ollama. Install with: pip install trustandverify[ollama]"
             ) from e
 
         client = AsyncClient(host=self._host)
@@ -44,6 +43,8 @@ class OllamaBackend:
         response = await client.chat(model=self.model, messages=messages)
         return str(response["message"]["content"])
 
-    async def complete_json(self, prompt: str, system: str = "", defaults: dict | None = None) -> dict:
+    async def complete_json(
+        self, prompt: str, system: str = "", defaults: dict | None = None
+    ) -> dict:
         raw = await self.complete(prompt, system=system)
         return _parse_json_robust(raw, defaults=defaults or {})

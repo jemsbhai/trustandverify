@@ -10,7 +10,7 @@ from trustandverify.core.models import Report, Verdict
 _VERDICT_COLOUR = {
     Verdict.SUPPORTED: ("#00c853", "#f0fdf4"),
     Verdict.CONTESTED: ("#ff9100", "#fff8e1"),
-    Verdict.REFUTED:   ("#ff1744", "#fef2f2"),
+    Verdict.REFUTED: ("#ff1744", "#fef2f2"),
     Verdict.NO_EVIDENCE: ("#9e9e9e", "#f5f5f5"),
 }
 
@@ -84,6 +84,7 @@ class HtmlExporter:
 
 # ── Block builders ─────────────────────────────────────────────────────────────
 
+
 def _summary_block(report: Report) -> str:
     if not report.summary:
         return ""
@@ -94,7 +95,7 @@ def _metrics_block(report: Report) -> str:
     claims = report.claims
     supported = sum(1 for c in claims if c.verdict == Verdict.SUPPORTED)
     contested = sum(1 for c in claims if c.verdict == Verdict.CONTESTED)
-    refuted   = sum(1 for c in claims if c.verdict == Verdict.REFUTED)
+    refuted = sum(1 for c in claims if c.verdict == Verdict.REFUTED)
     return f"""
     <div class="metrics">
       <div class="metric">
@@ -133,12 +134,12 @@ def _claims_block(report: Report) -> str:
                 f'<div class="b" style="width:{b_pct:.1f}%"></div>'
                 f'<div class="d" style="width:{d_pct:.1f}%"></div>'
                 f'<div class="u" style="width:{u_pct:.1f}%"></div>'
-                f'</div>'
+                f"</div>"
                 f'<div class="bar-legend">'
-                f'<span>🟢 Belief: {op.belief:.3f}</span>'
-                f'<span>🔴 Disbelief: {op.disbelief:.3f}</span>'
-                f'<span>⚪ Uncertainty: {op.uncertainty:.3f}</span>'
-                f'</div>'
+                f"<span>🟢 Belief: {op.belief:.3f}</span>"
+                f"<span>🔴 Disbelief: {op.disbelief:.3f}</span>"
+                f"<span>⚪ Uncertainty: {op.uncertainty:.3f}</span>"
+                f"</div>"
             )
             p_str = f"{p:.3f}"
         else:
@@ -153,7 +154,7 @@ def _claims_block(report: Report) -> str:
                 chips.append(
                     f'<span class="source">{icon} '
                     f'<a href="{_esc(ev.source.url)}">{_esc(ev.source.title)}</a> '
-                    f'(trust: {ev.source.trust_score:.2f})</span>'
+                    f"(trust: {ev.source.trust_score:.2f})</span>"
                 )
             sources_html = "<p><strong>Sources:</strong><br>" + " ".join(chips) + "</p>"
 
@@ -183,20 +184,17 @@ def _conflicts_block(report: Report) -> str:
     for c in report.conflicts:
         parts.append(
             f'<div class="conflict">'
-            f'<strong>{_esc(c.claim_text)}</strong> — '
-            f'conflict degree: {c.conflict_degree:.3f} '
-            f'({c.num_supporting} supporting vs {c.num_contradicting} contradicting)'
-            f'</div>'
+            f"<strong>{_esc(c.claim_text)}</strong> — "
+            f"conflict degree: {c.conflict_degree:.3f} "
+            f"({c.num_supporting} supporting vs {c.num_contradicting} contradicting)"
+            f"</div>"
         )
     return "\n".join(parts)
 
 
 def _esc(text: str) -> str:
     return (
-        text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
     )
 
 

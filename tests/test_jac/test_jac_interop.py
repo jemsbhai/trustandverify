@@ -2,14 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from jsonld_ex.confidence_algebra import Opinion
 
+from trustandverify.core.agent import TrustAgent
 from trustandverify.core.config import TrustConfig
-from trustandverify.core.models import Claim, Conflict, Evidence, Report, Source, Verdict
+from trustandverify.core.models import (
+    Claim,
+    Conflict,
+    Evidence,
+    Report,
+    SearchResult,
+    Source,
+    Verdict,
+)
 from trustandverify.jac_interop import (
     _dict_to_report,
     _make_exporter,
@@ -17,11 +27,11 @@ from trustandverify.jac_interop import (
     _make_search,
     _make_storage,
     _report_to_dict,
+    _run_async,
     jac_configure_agent,
     jac_export,
     jac_verify,
 )
-
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -72,21 +82,25 @@ def sample_report() -> Report:
 class TestMakeSearch:
     def test_tavily(self):
         from trustandverify.search.tavily import TavilySearch
+
         s = _make_search("tavily")
         assert isinstance(s, TavilySearch)
 
     def test_brave(self):
         from trustandverify.search.brave import BraveSearch
+
         s = _make_search("brave")
         assert isinstance(s, BraveSearch)
 
     def test_bing(self):
         from trustandverify.search.bing import BingSearch
+
         s = _make_search("bing")
         assert isinstance(s, BingSearch)
 
     def test_serpapi(self):
         from trustandverify.search.serpapi import SerpAPISearch
+
         s = _make_search("serpapi")
         assert isinstance(s, SerpAPISearch)
 
@@ -96,6 +110,7 @@ class TestMakeSearch:
 
     def test_case_insensitive(self):
         from trustandverify.search.tavily import TavilySearch
+
         assert isinstance(_make_search("TAVILY"), TavilySearch)
         assert isinstance(_make_search(" Tavily "), TavilySearch)
 
@@ -106,18 +121,22 @@ class TestMakeSearch:
 class TestMakeLlm:
     def test_gemini(self):
         from trustandverify.llm.gemini import GeminiBackend
+
         assert isinstance(_make_llm("gemini"), GeminiBackend)
 
     def test_openai(self):
         from trustandverify.llm.openai import OpenAIBackend
+
         assert isinstance(_make_llm("openai"), OpenAIBackend)
 
     def test_anthropic(self):
         from trustandverify.llm.anthropic import AnthropicBackend
+
         assert isinstance(_make_llm("anthropic"), AnthropicBackend)
 
     def test_ollama(self):
         from trustandverify.llm.ollama import OllamaBackend
+
         assert isinstance(_make_llm("ollama"), OllamaBackend)
 
     def test_unknown_raises(self):
@@ -131,10 +150,12 @@ class TestMakeLlm:
 class TestMakeStorage:
     def test_memory(self):
         from trustandverify.storage.memory import InMemoryStorage
+
         assert isinstance(_make_storage("memory", ""), InMemoryStorage)
 
     def test_sqlite(self, tmp_path):
         from trustandverify.storage.sqlite import SQLiteStorage
+
         s = _make_storage("sqlite", str(tmp_path / "test.db"))
         assert isinstance(s, SQLiteStorage)
 
@@ -149,19 +170,23 @@ class TestMakeStorage:
 class TestMakeExporter:
     def test_jsonld(self):
         from trustandverify.export.jsonld import JsonLdExporter
+
         assert isinstance(_make_exporter("jsonld"), JsonLdExporter)
 
     def test_markdown(self):
         from trustandverify.export.markdown import MarkdownExporter
+
         assert isinstance(_make_exporter("markdown"), MarkdownExporter)
         assert isinstance(_make_exporter("md"), MarkdownExporter)
 
     def test_html(self):
         from trustandverify.export.html import HtmlExporter
+
         assert isinstance(_make_exporter("html"), HtmlExporter)
 
     def test_pdf(self):
         from trustandverify.export.pdf import PdfExporter
+
         assert isinstance(_make_exporter("pdf"), PdfExporter)
 
     def test_unknown_raises(self):
@@ -230,9 +255,11 @@ class TestReportSerialization:
 
     def test_none_opinion_claim(self):
         report = Report(
-            id="x", query="q",
+            id="x",
+            query="q",
             claims=[Claim(text="No opinion", opinion=None)],
-            conflicts=[], summary="s",
+            conflicts=[],
+            summary="s",
             created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         )
         d = _report_to_dict(report)
@@ -247,6 +274,7 @@ class TestReportSerialization:
 class TestJacConfigureAgent:
     def test_returns_agent(self):
         from trustandverify.core.agent import TrustAgent
+
         agent = jac_configure_agent()
         assert isinstance(agent, TrustAgent)
 
@@ -266,9 +294,7 @@ class TestJacConfigureAgent:
         assert agent.config.enable_byzantine is True
 
     def test_sqlite_storage(self, tmp_path):
-        agent = jac_configure_agent(
-            storage_backend="sqlite", db_path=str(tmp_path / "test.db")
-        )
+        agent = jac_configure_agent(storage_backend="sqlite", db_path=str(tmp_path / "test.db"))
         assert agent.storage.__class__.__name__ == "SQLiteStorage"
 
 
@@ -298,7 +324,13 @@ class TestJacVerify:
         with patch("trustandverify.jac_interop._run_async", return_value=sample_report):
             result = jac_verify("q", enable_cache=False)
         op = result["claims"][0]["opinion"]
-        assert set(op.keys()) == {"belief", "disbelief", "uncertainty", "base_rate", "projected_probability"}
+        assert set(op.keys()) == {
+            "belief",
+            "disbelief",
+            "uncertainty",
+            "base_rate",
+            "projected_probability",
+        }
 
 
 # ── jac_export ────────────────────────────────────────────────────────────────
@@ -355,16 +387,13 @@ class TestJacExport:
 
 # ── _run_async() ────────────────────────────────────────────────────────────
 
-import asyncio as _asyncio
-
-from trustandverify.jac_interop import _run_async
-
 
 class TestRunAsync:
     """Test both branches of _run_async()."""
 
     def test_no_running_loop_uses_asyncio_run(self):
         """When no event loop is running, _run_async uses asyncio.run()."""
+
         async def coro():
             return 42
 
@@ -374,6 +403,7 @@ class TestRunAsync:
     def test_running_loop_uses_nest_asyncio(self):
         """When an event loop IS running, _run_async uses nest_asyncio."""
         import nest_asyncio
+
         nest_asyncio.apply()
 
         async def inner():
@@ -383,7 +413,7 @@ class TestRunAsync:
             # We're inside a running loop here
             return _run_async(inner())
 
-        result = _asyncio.run(outer())
+        result = asyncio.run(outer())
         assert result == 99
 
 
@@ -400,6 +430,7 @@ class TestMakeSearchMulti:
         monkeypatch.delenv("BING_API_KEY", raising=False)
 
         from trustandverify.search.multi import MultiSearch
+
         result = _make_search("multi")
         assert isinstance(result, MultiSearch)
 
@@ -410,6 +441,7 @@ class TestMakeSearchMulti:
         monkeypatch.delenv("BING_API_KEY", raising=False)
 
         from trustandverify.search.tavily import TavilySearch
+
         result = _make_search("multi")
         assert isinstance(result, TavilySearch)
 
@@ -429,9 +461,6 @@ class TestMakeSearchMulti:
 # _run_async() → asyncio.run() without hitting a running event loop.
 # The direct TrustAgent path also uses asyncio.run().
 # Fresh mocks are created for each path to avoid shared state.
-
-from trustandverify.core.agent import TrustAgent
-from trustandverify.core.models import SearchResult
 
 
 def _fresh_mock_llm():
@@ -468,10 +497,13 @@ def _fresh_mock_llm():
 def _fresh_mock_search():
     """Create a fresh canned mock search."""
     search = MagicMock()
-    search.search = AsyncMock(return_value=[
-        SearchResult(title="Study", url="https://example.com",
-                     content="Coffee is healthy.", score=0.9),
-    ])
+    search.search = AsyncMock(
+        return_value=[
+            SearchResult(
+                title="Study", url="https://example.com", content="Coffee is healthy.", score=0.9
+            ),
+        ]
+    )
     search.is_available = MagicMock(return_value=True)
     search.name = "mock"
     return search
@@ -493,9 +525,7 @@ class TestJacVerifyEquivalence:
             patch("trustandverify.jac_interop._make_search", return_value=_fresh_mock_search()),
             patch("trustandverify.jac_interop._make_llm", return_value=_fresh_mock_llm()),
         ):
-            jac_result = jac_verify(
-                "Is coffee healthy?", num_claims=2, enable_cache=False
-            )
+            jac_result = jac_verify("Is coffee healthy?", num_claims=2, enable_cache=False)
 
         assert isinstance(jac_result, dict)
         assert jac_result["query"] == "Is coffee healthy?"
@@ -509,9 +539,7 @@ class TestJacVerifyEquivalence:
             patch("trustandverify.jac_interop._make_search", return_value=_fresh_mock_search()),
             patch("trustandverify.jac_interop._make_llm", return_value=_fresh_mock_llm()),
         ):
-            jac_result = jac_verify(
-                "Is coffee healthy?", num_claims=2, enable_cache=False
-            )
+            jac_result = jac_verify("Is coffee healthy?", num_claims=2, enable_cache=False)
 
         for claim in jac_result["claims"]:
             op = claim["opinion"]
@@ -520,9 +548,7 @@ class TestJacVerifyEquivalence:
             assert 0.0 <= op["disbelief"] <= 1.0
             assert 0.0 <= op["uncertainty"] <= 1.0
             total = op["belief"] + op["disbelief"] + op["uncertainty"]
-            assert abs(total - 1.0) < 1e-6, (
-                f"b+d+u = {total} != 1.0 for claim: {claim['text']}"
-            )
+            assert abs(total - 1.0) < 1e-6, f"b+d+u = {total} != 1.0 for claim: {claim['text']}"
 
     def test_jac_verify_matches_direct_agent(self):
         """jac_verify() and TrustAgent.verify() must produce identical results.
@@ -536,9 +562,7 @@ class TestJacVerifyEquivalence:
             patch("trustandverify.jac_interop._make_search", return_value=_fresh_mock_search()),
             patch("trustandverify.jac_interop._make_llm", return_value=_fresh_mock_llm()),
         ):
-            jac_result = jac_verify(
-                "Is coffee healthy?", num_claims=2, enable_cache=False
-            )
+            jac_result = jac_verify("Is coffee healthy?", num_claims=2, enable_cache=False)
 
         # Path B: TrustAgent.verify() directly
         agent = TrustAgent(
@@ -546,12 +570,12 @@ class TestJacVerifyEquivalence:
             search=_fresh_mock_search(),
             llm=_fresh_mock_llm(),
         )
-        direct_report = _asyncio.run(agent.verify("Is coffee healthy?"))
+        direct_report = asyncio.run(agent.verify("Is coffee healthy?"))
 
         # ── Structural equivalence ──
         assert len(jac_result["claims"]) == len(direct_report.claims)
 
-        for jc, dc in zip(jac_result["claims"], direct_report.claims):
+        for jc, dc in zip(jac_result["claims"], direct_report.claims, strict=True):
             # Same text
             assert jc["text"] == dc.text
             # Same verdict
@@ -562,9 +586,9 @@ class TestJacVerifyEquivalence:
                 assert abs(jop["belief"] - dc.opinion.belief) < 1e-10
                 assert abs(jop["disbelief"] - dc.opinion.disbelief) < 1e-10
                 assert abs(jop["uncertainty"] - dc.opinion.uncertainty) < 1e-10
-                assert abs(
-                    jop["projected_probability"] - dc.opinion.projected_probability()
-                ) < 1e-10
+                assert (
+                    abs(jop["projected_probability"] - dc.opinion.projected_probability()) < 1e-10
+                )
 
         # Same summary
         assert jac_result["summary"] == direct_report.summary
@@ -575,9 +599,7 @@ class TestJacVerifyEquivalence:
             patch("trustandverify.jac_interop._make_search", return_value=_fresh_mock_search()),
             patch("trustandverify.jac_interop._make_llm", return_value=_fresh_mock_llm()),
         ):
-            jac_result = jac_verify(
-                "Is coffee healthy?", num_claims=2, enable_cache=False
-            )
+            jac_result = jac_verify("Is coffee healthy?", num_claims=2, enable_cache=False)
 
         # Round-trip: dict → Report → dict
         restored_report = _dict_to_report(jac_result)
@@ -585,7 +607,7 @@ class TestJacVerifyEquivalence:
 
         # Claims must survive
         assert len(re_serialised["claims"]) == len(jac_result["claims"])
-        for orig, rest in zip(jac_result["claims"], re_serialised["claims"]):
+        for orig, rest in zip(jac_result["claims"], re_serialised["claims"], strict=True):
             assert orig["text"] == rest["text"]
             assert orig["verdict"] == rest["verdict"]
             if orig["opinion"] is not None:

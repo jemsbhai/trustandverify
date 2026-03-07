@@ -12,8 +12,8 @@ from trustandverify.search.brave import BraveSearch
 from trustandverify.search.multi import MultiSearch
 from trustandverify.search.serpapi import SerpAPISearch
 
-
 # ── BraveSearch ────────────────────────────────────────────────────────────────
+
 
 class TestBraveSearch:
     def test_is_available_with_key(self):
@@ -29,9 +29,18 @@ class TestBraveSearch:
         assert results == []
 
     async def test_parses_results(self):
-        payload = {"web": {"results": [
-            {"title": "T1", "url": "https://example.com", "description": "Desc", "score": 0.8},
-        ]}}
+        payload = {
+            "web": {
+                "results": [
+                    {
+                        "title": "T1",
+                        "url": "https://example.com",
+                        "description": "Desc",
+                        "score": 0.8,
+                    },
+                ]
+            }
+        }
         mock_resp = MagicMock()
         mock_resp.json.return_value = payload
         mock_resp.raise_for_status = MagicMock()
@@ -49,18 +58,18 @@ class TestBraveSearch:
 
     async def test_returns_empty_on_error(self):
         import httpx
+
         mock_client = AsyncMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
-        mock_client.get = AsyncMock(
-            side_effect=httpx.RequestError("fail", request=MagicMock())
-        )
+        mock_client.get = AsyncMock(side_effect=httpx.RequestError("fail", request=MagicMock()))
         with patch("trustandverify.search.brave.httpx.AsyncClient", return_value=mock_client):
             results = await BraveSearch(api_key="fake").search("test")
         assert results == []
 
 
 # ── BingSearch ─────────────────────────────────────────────────────────────────
+
 
 class TestBingSearch:
     def test_is_available_with_key(self):
@@ -76,9 +85,13 @@ class TestBingSearch:
         assert results == []
 
     async def test_parses_results(self):
-        payload = {"webPages": {"value": [
-            {"name": "T1", "url": "https://example.com", "snippet": "Snip"},
-        ]}}
+        payload = {
+            "webPages": {
+                "value": [
+                    {"name": "T1", "url": "https://example.com", "snippet": "Snip"},
+                ]
+            }
+        }
         mock_resp = MagicMock()
         mock_resp.json.return_value = payload
         mock_resp.raise_for_status = MagicMock()
@@ -96,6 +109,7 @@ class TestBingSearch:
 
 # ── SerpAPISearch ──────────────────────────────────────────────────────────────
 
+
 class TestSerpAPISearch:
     def test_is_available_with_key(self):
         assert SerpAPISearch(api_key="fake").is_available() is True
@@ -105,9 +119,11 @@ class TestSerpAPISearch:
         assert SerpAPISearch(api_key="").is_available() is False
 
     async def test_parses_organic_results(self):
-        payload = {"organic_results": [
-            {"title": "T1", "link": "https://example.com", "snippet": "Snip"},
-        ]}
+        payload = {
+            "organic_results": [
+                {"title": "T1", "link": "https://example.com", "snippet": "Snip"},
+            ]
+        }
         mock_resp = MagicMock()
         mock_resp.json.return_value = payload
         mock_resp.raise_for_status = MagicMock()
@@ -124,6 +140,7 @@ class TestSerpAPISearch:
 
 
 # ── MultiSearch ────────────────────────────────────────────────────────────────
+
 
 def _mock_backend(name: str, results: list[SearchResult], available: bool = True):
     b = MagicMock()
@@ -161,10 +178,14 @@ class TestMultiSearch:
         assert "https://unique.com" in urls
 
     async def test_respects_max_results(self):
-        results_a = [SearchResult(title=f"T{i}", url=f"https://a.com/{i}", content="x", score=0.5)
-                     for i in range(5)]
-        results_b = [SearchResult(title=f"U{i}", url=f"https://b.com/{i}", content="y", score=0.5)
-                     for i in range(5)]
+        results_a = [
+            SearchResult(title=f"T{i}", url=f"https://a.com/{i}", content="x", score=0.5)
+            for i in range(5)
+        ]
+        results_b = [
+            SearchResult(title=f"U{i}", url=f"https://b.com/{i}", content="y", score=0.5)
+            for i in range(5)
+        ]
         a = _mock_backend("a", results_a)
         b = _mock_backend("b", results_b)
 

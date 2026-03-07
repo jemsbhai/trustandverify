@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import json
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import (
+    _claim_to_dict,
+    _dict_to_claim,
+    _dict_to_report,
+    _report_to_dict,
+)
 
 _CREATE_REPORTS = """
 CREATE TABLE IF NOT EXISTS tv_reports (
@@ -44,6 +48,7 @@ class PostgresStorage:
 
     def __init__(self, dsn: str | None = None) -> None:
         import os
+
         self._dsn = dsn or os.environ.get("POSTGRES_DSN", "")
         self._pool = None
 
@@ -73,16 +78,18 @@ class PostgresStorage:
                 "INSERT INTO tv_reports (id, query, summary, created_at, data) "
                 "VALUES ($1, $2, $3, $4, $5::jsonb) "
                 "ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data",
-                report.id, report.query, report.summary, report.created_at, data,
+                report.id,
+                report.query,
+                report.summary,
+                report.created_at,
+                data,
             )
         return report.id
 
     async def get_report(self, report_id: str) -> Report | None:
         pool = await self._get_pool()
         async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT data FROM tv_reports WHERE id = $1", report_id
-            )
+            row = await conn.fetchrow("SELECT data FROM tv_reports WHERE id = $1", report_id)
         if not row:
             return None
         return _dict_to_report(json.loads(row["data"]))
@@ -92,15 +99,20 @@ class PostgresStorage:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT id, query, created_at, data FROM tv_reports "
-                "ORDER BY created_at DESC LIMIT $1", limit
+                "ORDER BY created_at DESC LIMIT $1",
+                limit,
             )
         summaries = []
         for r in rows:
             data = json.loads(r["data"])
-            summaries.append(ReportSummary(
-                id=r["id"], query=r["query"], created_at=r["created_at"],
-                num_claims=len(data.get("claims", [])),
-            ))
+            summaries.append(
+                ReportSummary(
+                    id=r["id"],
+                    query=r["query"],
+                    created_at=r["created_at"],
+                    num_claims=len(data.get("claims", [])),
+                )
+            )
         return summaries
 
     async def save_claim(self, claim: Claim, query_id: str) -> str:
@@ -110,7 +122,10 @@ class PostgresStorage:
             await conn.execute(
                 "INSERT INTO tv_claims (query_id, text, verdict, data) "
                 "VALUES ($1, $2, $3, $4::jsonb)",
-                query_id, claim.text, claim.verdict.value, data,
+                query_id,
+                claim.text,
+                claim.verdict.value,
+                data,
             )
         return claim.text
 

@@ -11,11 +11,12 @@ from trustandverify.core.agent import TrustAgent
 from trustandverify.core.config import TrustConfig
 from trustandverify.core.models import Report, SearchResult, Verdict
 
-
 # ── Canned mock data ──────────────────────────────────────────────────────────
 
-CANNED_CLAIMS = ["Remote workers report higher individual output.",
-                 "Collaboration suffers in remote settings."]
+CANNED_CLAIMS = [
+    "Remote workers report higher individual output.",
+    "Collaboration suffers in remote settings.",
+]
 
 CANNED_SEARCH = [
     SearchResult(
@@ -76,6 +77,7 @@ def make_mock_search() -> MagicMock:
 
 
 # ── TrustAgent tests ──────────────────────────────────────────────────────────
+
 
 class TestTrustAgent:
     async def test_verify_returns_report(self):
@@ -149,6 +151,7 @@ class TestTrustAgent:
 
     async def test_report_saved_to_storage(self):
         from trustandverify.storage.memory import InMemoryStorage
+
         storage = InMemoryStorage()
         agent = TrustAgent(
             config=TrustConfig(num_claims=2, enable_cache=False),

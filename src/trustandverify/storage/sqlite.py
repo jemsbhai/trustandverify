@@ -5,11 +5,18 @@ from __future__ import annotations
 import asyncio
 import json
 import sqlite3
-from datetime import datetime, timezone
-from functools import partial
-from typing import Any
+from datetime import datetime
 
-from trustandverify.core.models import Claim, Conflict, Evidence, Opinion, Report, ReportSummary, Source, Verdict
+from trustandverify.core.models import (
+    Claim,
+    Conflict,
+    Evidence,
+    Opinion,
+    Report,
+    ReportSummary,
+    Source,
+    Verdict,
+)
 
 _CREATE_REPORTS = """
 CREATE TABLE IF NOT EXISTS reports (
@@ -93,9 +100,7 @@ class SQLiteStorage:
     async def get_report(self, report_id: str) -> Report | None:
         def _get() -> dict | None:
             conn = self._connect()
-            row = conn.execute(
-                "SELECT data FROM reports WHERE id = ?", (report_id,)
-            ).fetchone()
+            row = conn.execute("SELECT data FROM reports WHERE id = ?", (report_id,)).fetchone()
             return json.loads(row["data"]) if row else None
 
         data = await asyncio.to_thread(_get)
@@ -105,8 +110,7 @@ class SQLiteStorage:
         def _list() -> list[dict]:
             conn = self._connect()
             rows = conn.execute(
-                "SELECT id, query, created_at, data FROM reports "
-                "ORDER BY created_at DESC LIMIT ?",
+                "SELECT id, query, created_at, data FROM reports ORDER BY created_at DESC LIMIT ?",
                 (limit,),
             ).fetchall()
             return [dict(r) for r in rows]
@@ -115,12 +119,14 @@ class SQLiteStorage:
         summaries = []
         for r in rows:
             data = json.loads(r["data"])
-            summaries.append(ReportSummary(
-                id=r["id"],
-                query=r["query"],
-                created_at=datetime.fromisoformat(r["created_at"]),
-                num_claims=len(data.get("claims", [])),
-            ))
+            summaries.append(
+                ReportSummary(
+                    id=r["id"],
+                    query=r["query"],
+                    created_at=datetime.fromisoformat(r["created_at"]),
+                    num_claims=len(data.get("claims", [])),
+                )
+            )
         return summaries
 
     async def save_claim(self, claim: Claim, query_id: str) -> str:
@@ -151,6 +157,7 @@ class SQLiteStorage:
 
 
 # ── Serialisation helpers ──────────────────────────────────────────────────────
+
 
 def _report_to_dict(report: Report) -> dict:
     return {
@@ -241,20 +248,22 @@ def _dict_to_claim(data: dict) -> Claim:
     evidence = []
     for e in data.get("evidence", []):
         s = e["source"]
-        evidence.append(Evidence(
-            text=e["text"],
-            supports_claim=e["supports_claim"],
-            relevance=e["relevance"],
-            confidence_raw=e["confidence_raw"],
-            source=Source(
-                url=s["url"],
-                title=s["title"],
-                content_snippet=s["content_snippet"],
-                trust_score=s["trust_score"],
-                source_type=s.get("source_type", "web"),
-            ),
-            opinion=opinion,
-        ))
+        evidence.append(
+            Evidence(
+                text=e["text"],
+                supports_claim=e["supports_claim"],
+                relevance=e["relevance"],
+                confidence_raw=e["confidence_raw"],
+                source=Source(
+                    url=s["url"],
+                    title=s["title"],
+                    content_snippet=s["content_snippet"],
+                    trust_score=s["trust_score"],
+                    source_type=s.get("source_type", "web"),
+                ),
+                opinion=opinion,
+            )
+        )
     return Claim(
         text=data["text"],
         verdict=Verdict(data.get("verdict", "no_evidence")),

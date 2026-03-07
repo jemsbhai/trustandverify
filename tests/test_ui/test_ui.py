@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from trustandverify.core.models import Report
 from trustandverify.ui.app import _check_env, _opinion_bar, _run_agent, _verdict_emoji

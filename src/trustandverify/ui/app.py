@@ -10,21 +10,23 @@ import asyncio
 import os
 import sys
 
-
 # ── Helpers (testable without Streamlit) ──────────────────────────────────────
+
 
 def _opinion_bar(belief: float, disbelief: float, uncertainty: float) -> str:
     return (
         f'<div class="opinion-bar">'
-        f'<div class="b-bar" style="width:{belief*100:.1f}%" title="Belief: {belief:.3f}"></div>'
-        f'<div class="d-bar" style="width:{disbelief*100:.1f}%" title="Disbelief: {disbelief:.3f}"></div>'
-        f'<div class="u-bar" style="width:{uncertainty*100:.1f}%" title="Uncertainty: {uncertainty:.3f}"></div>'
-        f'</div>'
+        f'<div class="b-bar" style="width:{belief * 100:.1f}%" title="Belief: {belief:.3f}"></div>'
+        f'<div class="d-bar" style="width:{disbelief * 100:.1f}%"'
+        f' title="Disbelief: {disbelief:.3f}"></div>'
+        f'<div class="u-bar" style="width:{uncertainty * 100:.1f}%"'
+        f' title="Uncertainty: {uncertainty:.3f}"></div>'
+        f"</div>"
         f'<div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#888">'
-        f'<span>🟢 Belief: {belief:.3f}</span>'
-        f'<span>🔴 Disbelief: {disbelief:.3f}</span>'
-        f'<span>⚪ Uncertainty: {uncertainty:.3f}</span>'
-        f'</div>'
+        f"<span>🟢 Belief: {belief:.3f}</span>"
+        f"<span>🔴 Disbelief: {disbelief:.3f}</span>"
+        f"<span>⚪ Uncertainty: {uncertainty:.3f}</span>"
+        f"</div>"
     )
 
 
@@ -58,6 +60,7 @@ def _run_agent(query: str, num_claims: int) -> object:
 
 # ── Streamlit runtime (only runs under `streamlit run`) ──────────────────────
 
+
 def _streamlit_main() -> None:  # pragma: no cover
     import streamlit as st
 
@@ -67,7 +70,8 @@ def _streamlit_main() -> None:  # pragma: no cover
         layout="wide",
     )
 
-    st.markdown("""
+    st.markdown(
+        """
     <style>
         .main-header {
             font-size: 2.5rem; font-weight: 700;
@@ -87,12 +91,14 @@ def _streamlit_main() -> None:  # pragma: no cover
         .source-chip { display: inline-block; background: #e8eaf6; padding: 4px 10px;
                        border-radius: 8px; font-size: 0.8rem; margin: 2px; }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown('<div class="main-header">🔍 TrustGraph</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="sub-header">Agentic Knowledge Verification · '
-        'Subjective Logic Confidence Algebra · trustandverify</div>',
+        "Subjective Logic Confidence Algebra · trustandverify</div>",
         unsafe_allow_html=True,
     )
 
@@ -116,7 +122,10 @@ def _streamlit_main() -> None:  # pragma: no cover
         )
     with col2:
         num_claims = st.slider(
-            "Claims", min_value=0, max_value=8, value=0,
+            "Claims",
+            min_value=0,
+            max_value=8,
+            value=0,
             help="0 = auto (3–5). Use 2–3 for speed, 6–8 for depth.",
         )
     with col3:
@@ -158,21 +167,21 @@ def _streamlit_main() -> None:  # pragma: no cover
         claims = report.claims
         supported = sum(1 for c in claims if c.verdict.value == "supported")
         contested = sum(1 for c in claims if c.verdict.value == "contested")
-        refuted   = sum(1 for c in claims if c.verdict.value == "refuted")
+        refuted = sum(1 for c in claims if c.verdict.value == "refuted")
 
         m1, m2, m3, m4 = st.columns(4)
         for col, val, label, colour in [
             (m1, len(claims), "Claims Verified", "#1a1a1a"),
-            (m2, supported,  "Supported",        "#00c853"),
-            (m3, contested,  "Contested",         "#ff9100"),
-            (m4, refuted,    "Refuted",           "#ff1744"),
+            (m2, supported, "Supported", "#00c853"),
+            (m3, contested, "Contested", "#ff9100"),
+            (m4, refuted, "Refuted", "#ff1744"),
         ]:
             with col:
                 st.markdown(
                     f'<div class="metric-box">'
                     f'<div class="metric-value" style="color:{colour}">{val}</div>'
                     f'<div class="metric-label">{label}</div>'
-                    f'</div>',
+                    f"</div>",
                     unsafe_allow_html=True,
                 )
 
@@ -221,7 +230,7 @@ def _streamlit_main() -> None:  # pragma: no cover
                         st.markdown(
                             f'<span class="source-chip">{icon} '
                             f'<a href="{ev.source.url}">{ev.source.title}</a> '
-                            f'(trust: {ev.source.trust_score:.2f}, {label})</span>',
+                            f"(trust: {ev.source.trust_score:.2f}, {label})</span>",
                             unsafe_allow_html=True,
                         )
 
@@ -236,9 +245,9 @@ def _streamlit_main() -> None:  # pragma: no cover
 
         # ── Export ──
         st.markdown("### 📦 Export")
+        from trustandverify.export.html import HtmlExporter
         from trustandverify.export.jsonld import JsonLdExporter
         from trustandverify.export.markdown import MarkdownExporter
-        from trustandverify.export.html import HtmlExporter
 
         ex1, ex2, ex3 = st.columns(3)
         with ex1:

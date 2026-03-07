@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from jsonld_ex.confidence_algebra import Opinion
 
 from trustandverify.core.config import TrustConfig
@@ -18,7 +17,6 @@ from trustandverify.core.pipeline import (
     search_for_claim,
     summarise,
 )
-
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
 
@@ -52,9 +50,13 @@ def _mock_llm():
 
 def _mock_search():
     search = MagicMock()
-    search.search = AsyncMock(return_value=[
-        SearchResult(title="Source1", url="https://example.com", content="Content here", score=0.9),
-    ])
+    search.search = AsyncMock(
+        return_value=[
+            SearchResult(
+                title="Source1", url="https://example.com", content="Content here", score=0.9
+            ),
+        ]
+    )
     return search
 
 
@@ -97,9 +99,7 @@ class TestPlan:
 
 class TestSearchForClaim:
     async def test_basic_search(self):
-        results = await search_for_claim(
-            "test claim", TrustConfig(), _mock_search(), _mock_llm()
-        )
+        results = await search_for_claim("test claim", TrustConfig(), _mock_search(), _mock_llm())
         assert len(results) == 1
 
     async def test_with_cache_miss(self):
@@ -137,7 +137,9 @@ class TestSearchForClaim:
             if "search_query:" in key:
                 return "cached query"
             if "search_results:" in key:
-                return [{"title": "Cached", "url": "https://cached.com", "content": "c", "score": 0.5}]
+                return [
+                    {"title": "Cached", "url": "https://cached.com", "content": "c", "score": 0.5}
+                ]
             return None
 
         cache.get = smart_get
@@ -169,12 +171,14 @@ class TestExtract:
 
     async def test_with_cached_evidence(self):
         cache = MagicMock()
-        cache.get = AsyncMock(return_value={
-            "evidence": "Cached evidence",
-            "supports": False,
-            "relevance": 0.7,
-            "confidence": 0.6,
-        })
+        cache.get = AsyncMock(
+            return_value={
+                "evidence": "Cached evidence",
+                "supports": False,
+                "relevance": 0.7,
+                "confidence": 0.6,
+            }
+        )
         cache.set = AsyncMock()
 
         results = [SearchResult(title="T", url="https://x.com", content="Text", score=0.9)]
@@ -235,7 +239,9 @@ class TestAssess:
                     supports_claim=True,
                     relevance=0.9,
                     confidence_raw=0.8,
-                    source=Source(url="https://x.com", title="T", content_snippet="S", trust_score=0.7),
+                    source=Source(
+                        url="https://x.com", title="T", content_snippet="S", trust_score=0.7
+                    ),
                 ),
             ],
         )
@@ -297,7 +303,7 @@ class TestSummarise:
                 assessment="Assessment A.",
             ),
         ]
-        text = await summarise("test question", claims, _mock_llm(), cache=cache)
+        await summarise("test question", claims, _mock_llm(), cache=cache)
         assert cache.set.call_count >= 1
 
     async def test_with_cached_summary(self):
@@ -343,10 +349,14 @@ class TestRunPipeline:
         """Ensure the conflict logging branch in verbose mode is exercised."""
         # Create a search that returns 2 results so we get both supporting and contradicting
         search = MagicMock()
-        search.search = AsyncMock(return_value=[
-            SearchResult(title="Pro", url="https://pro.com", content="Evidence for", score=0.9),
-            SearchResult(title="Con", url="https://con.com", content="Evidence against", score=0.8),
-        ])
+        search.search = AsyncMock(
+            return_value=[
+                SearchResult(title="Pro", url="https://pro.com", content="Evidence for", score=0.9),
+                SearchResult(
+                    title="Con", url="https://con.com", content="Evidence against", score=0.8
+                ),
+            ]
+        )
 
         # LLM returns alternating support/contradict
         call_count = {"extract": 0}
@@ -378,6 +388,6 @@ class TestRunPipeline:
             llm=llm,
             verbose=True,
         )
-        captured = capsys.readouterr()
+        capsys.readouterr()
         # Should have conflict output if mixed evidence was produced
         assert isinstance(report, Report)

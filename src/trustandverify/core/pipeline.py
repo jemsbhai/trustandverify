@@ -19,17 +19,14 @@ from trustandverify.core.models import (
     Report,
     SearchResult,
     Source,
-    Verdict,
 )
 from trustandverify.llm import prompts as P
-from trustandverify.scoring.algebra import build_evidence_opinion, score_claim
-from trustandverify.scoring.conflict import detect_conflicts_within_claim
-from trustandverify.scoring.fusion import fuse_evidence
-from trustandverify.scoring.opinions import flip_opinion, opinion_summary, scalar_to_opinion
-from trustandverify.scoring.trust import apply_trust_discount, estimate_source_trust
-
+from trustandverify.scoring.algebra import score_claim
+from trustandverify.scoring.opinions import opinion_summary
+from trustandverify.scoring.trust import estimate_source_trust
 
 # ── Stage 1: PLAN ─────────────────────────────────────────────────────────────
+
 
 async def plan(query: str, config: TrustConfig, llm: object) -> list[str]:
     """Decompose the query into verifiable claim texts.
@@ -57,6 +54,7 @@ async def plan(query: str, config: TrustConfig, llm: object) -> list[str]:
 
 
 # ── Stage 2: SEARCH ───────────────────────────────────────────────────────────
+
 
 async def search_for_claim(
     claim_text: str,
@@ -105,14 +103,17 @@ async def search_for_claim(
     if cache is not None and results:
         await cache.set(  # type: ignore[union-attr]
             results_key,
-            [{"title": r.title, "url": r.url, "content": r.content, "score": r.score}
-             for r in results],
+            [
+                {"title": r.title, "url": r.url, "content": r.content, "score": r.score}
+                for r in results
+            ],
         )
 
     return results
 
 
 # ── Stage 3: EXTRACT ──────────────────────────────────────────────────────────
+
 
 async def extract(
     claim_text: str,
@@ -180,6 +181,7 @@ async def extract(
 
 # ── Stage 4: SCORE ────────────────────────────────────────────────────────────
 
+
 def score(claim: Claim, config: TrustConfig) -> tuple[Claim, Conflict | None]:
     """Score a claim from its evidence list using Subjective Logic.
 
@@ -207,6 +209,7 @@ def score(claim: Claim, config: TrustConfig) -> tuple[Claim, Conflict | None]:
 
 
 # ── Stage 5: REPORT ───────────────────────────────────────────────────────────
+
 
 async def assess(claim: Claim, llm: object, cache: object | None = None) -> str:
     """Write a 2-3 sentence assessment for a single scored claim.
@@ -304,9 +307,9 @@ async def run_pipeline(
         if verbose:
             print(msg)
 
-    _log(f"\n{'='*60}")
+    _log(f"\n{'=' * 60}")
     _log("  trustandverify — Agentic Knowledge Verification")
-    _log(f"{'='*60}")
+    _log(f"{'=' * 60}")
     _log(f"\n  Query: {query}\n")
 
     # ── Stage 1: PLAN ──
@@ -319,7 +322,7 @@ async def run_pipeline(
 
     # ── Stages 2-4: per claim ──
     for i, claim in enumerate(claims):
-        _log(f"[2/5] SEARCH — Claim {i+1}: {claim.text[:70]}...")
+        _log(f"[2/5] SEARCH — Claim {i + 1}: {claim.text[:70]}...")
         results = await search_for_claim(claim.text, config, search, llm, cache)
         _log(f"      Found {len(results)} sources.")
 
@@ -332,7 +335,10 @@ async def run_pipeline(
         if claim.opinion is not None:
             summary = opinion_summary(claim.opinion)
             _log(f"      Result: {summary['verdict']} (P={summary['projected_probability']})")
-            _log(f"      Opinion: b={summary['belief']} d={summary['disbelief']} u={summary['uncertainty']}")
+            _log(
+                f"      Opinion: b={summary['belief']} d={summary['disbelief']} "
+                f"u={summary['uncertainty']}"
+            )
 
         if conflict is not None:
             conflicts.append(conflict)
@@ -360,9 +366,9 @@ async def run_pipeline(
     )
 
     if verbose:
-        _log(f"\n{'='*60}")
+        _log(f"\n{'=' * 60}")
         _log("  SUMMARY:")
         _log(f"  {summary_text}")
-        _log(f"{'='*60}\n")
+        _log(f"{'=' * 60}\n")
 
     return report

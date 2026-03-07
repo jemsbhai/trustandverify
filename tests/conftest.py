@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-
 from jsonld_ex.confidence_algebra import Opinion
+
 from trustandverify.core.models import Evidence, Source
 
 

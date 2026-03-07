@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from jsonld_ex.confidence_algebra import Opinion
 
 from trustandverify.scoring.conflict import detect_conflicts_within_claim
@@ -24,7 +23,6 @@ class TestDetectConflictsWithinClaim:
     def test_strong_conflict_detected(self):
         """A strong supporter vs a strong contradicting (flipped) opinion should flag."""
         strong_support = [Opinion(belief=0.8, disbelief=0.05, uncertainty=0.15, base_rate=0.5)]
-        strong_contra = [Opinion(belief=0.75, disbelief=0.05, uncertainty=0.20, base_rate=0.5)]
         # conflict = b_A * d_B + d_A * b_B = 0.8*0.05 + 0.05*0.75 = 0.04 + 0.0375 = 0.0775
         # This is below 0.2 threshold — need truly opposing opinions for strong conflict.
         # Use actual pairwise conflict formula: support(b=0.8) vs contra(b=0.1, d=0.7)

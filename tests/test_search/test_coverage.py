@@ -5,14 +5,12 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 
 from trustandverify.core.models import SearchResult
-from trustandverify.search.brave import BraveSearch
-from trustandverify.search.tavily import TavilySearch
 from trustandverify.search.bing import BingSearch
+from trustandverify.search.brave import BraveSearch
 from trustandverify.search.serpapi import SerpAPISearch
-
+from trustandverify.search.tavily import TavilySearch
 
 # ── TavilySearch (full coverage) ──────────────────────────────────────────────
 
@@ -77,7 +75,9 @@ class TestTavilySearchFull:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
         mock_client.post = AsyncMock(
-            side_effect=httpx.HTTPStatusError("rate limited", request=mock_request, response=mock_response)
+            side_effect=httpx.HTTPStatusError(
+                "rate limited", request=mock_request, response=mock_response
+            )
         )
 
         with patch("trustandverify.search.tavily.httpx.AsyncClient", return_value=mock_client):
@@ -88,9 +88,7 @@ class TestTavilySearchFull:
         mock_client = AsyncMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
-        mock_client.post = AsyncMock(
-            side_effect=httpx.RequestError("timeout", request=MagicMock())
-        )
+        mock_client.post = AsyncMock(side_effect=httpx.RequestError("timeout", request=MagicMock()))
 
         with patch("trustandverify.search.tavily.httpx.AsyncClient", return_value=mock_client):
             results = await TavilySearch(api_key="fake").search("test")
@@ -120,7 +118,9 @@ class TestBraveSearchErrors:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
         mock_client.get = AsyncMock(
-            side_effect=httpx.HTTPStatusError("rate limited", request=mock_request, response=mock_response)
+            side_effect=httpx.HTTPStatusError(
+                "rate limited", request=mock_request, response=mock_response
+            )
         )
 
         with patch("trustandverify.search.brave.httpx.AsyncClient", return_value=mock_client):
@@ -141,7 +141,9 @@ class TestBingSearchErrors:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
         mock_client.get = AsyncMock(
-            side_effect=httpx.HTTPStatusError("forbidden", request=mock_request, response=mock_response)
+            side_effect=httpx.HTTPStatusError(
+                "forbidden", request=mock_request, response=mock_response
+            )
         )
 
         with patch("trustandverify.search.bing.httpx.AsyncClient", return_value=mock_client):
@@ -177,7 +179,9 @@ class TestSerpAPISearchErrors:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
         mock_client.get = AsyncMock(
-            side_effect=httpx.HTTPStatusError("server error", request=mock_request, response=mock_response)
+            side_effect=httpx.HTTPStatusError(
+                "server error", request=mock_request, response=mock_response
+            )
         )
 
         with patch("trustandverify.search.serpapi.httpx.AsyncClient", return_value=mock_client):

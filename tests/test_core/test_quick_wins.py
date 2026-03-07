@@ -5,13 +5,14 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 from jsonld_ex.confidence_algebra import Opinion
 
 from trustandverify.core.agent import TrustAgent
 from trustandverify.core.config import TrustConfig
 from trustandverify.core.models import (
-    Claim, Conflict, Evidence, Report, Source, Verdict,
+    Claim,
+    Report,
+    Verdict,
 )
 from trustandverify.export.html import HtmlExporter
 from trustandverify.llm.gemini import _parse_json_robust
@@ -19,7 +20,6 @@ from trustandverify.llm.prompts import decompose_query
 from trustandverify.search.brave import BraveSearch
 from trustandverify.storage.memory import InMemoryStorage
 from trustandverify.storage.sqlite import SQLiteStorage
-
 
 # ── __init__.py: verify() one-liner ──────────────────────────────────────────
 
@@ -36,6 +36,7 @@ class TestVerifyOneLiner:
             instance.verify = AsyncMock(return_value=mock_report)
 
             from trustandverify import verify
+
             result = await verify("Is coffee healthy?", num_claims=3, verbose=True)
 
             assert result is mock_report
@@ -50,6 +51,7 @@ class TestVerifyOneLiner:
             instance.verify = AsyncMock(return_value=mock_report)
 
             from trustandverify import verify
+
             await verify("q", num_claims=7)
 
             # Verify TrustAgent was constructed with the right config
@@ -65,6 +67,7 @@ class TestVerifyOneLiner:
 class TestAgentCacheDefault:
     def test_cache_enabled_creates_file_cache(self):
         from trustandverify.cache.file_cache import FileCache
+
         agent = TrustAgent(
             config=TrustConfig(enable_cache=True),
             search=MagicMock(),
@@ -97,6 +100,7 @@ class TestAgentCacheDefault:
 class TestHtmlExporterGaps:
     def _make_report(self, summary="", opinion=None, evidence=None) -> Report:
         from datetime import datetime, timezone
+
         claim = Claim(
             text="Test claim",
             verdict=Verdict.NO_EVIDENCE,
@@ -150,14 +154,14 @@ class TestGeminiParserGaps:
 
     def test_invalid_json_in_braces(self):
         """Step 3: { } extraction with invalid JSON inside."""
-        raw = 'Some text {not: valid json, missing quotes} end'
+        raw = "Some text {not: valid json, missing quotes} end"
         result = _parse_json_robust(raw)
         # Falls through brace extraction (fails parse) to step 4 or unparseable
         assert isinstance(result, dict)
 
     def test_invalid_json_in_brackets(self):
         """Step 4: [ ] extraction with invalid JSON inside."""
-        raw = 'Some text [not valid, json array] end'
+        raw = "Some text [not valid, json array] end"
         result = _parse_json_robust(raw)
         # Falls through bracket extraction (fails parse) to unparseable
         assert isinstance(result, dict)

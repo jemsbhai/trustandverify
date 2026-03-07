@@ -168,7 +168,7 @@ def diagnose_byzantine(
             discord[i] += c
             discord[j] += c
     for i in range(n):
-        discord[i] /= (n - 1)
+        discord[i] /= n - 1
 
     discordant = [i for i in range(n) if discord[i] >= threshold]
     coh = cohesion_score(opinions)
@@ -177,10 +177,7 @@ def diagnose_byzantine(
         return {
             "recommended": True,
             "num_discordant": len(discordant),
-            "reason": (
-                f"{len(discordant)} of {n} sources have "
-                f"discord >= {threshold}"
-            ),
+            "reason": (f"{len(discordant)} of {n} sources have discord >= {threshold}"),
             "cohesion": round(float(coh), 4),
         }
 

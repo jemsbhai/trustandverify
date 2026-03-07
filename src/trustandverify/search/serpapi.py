@@ -45,12 +45,14 @@ class SerpAPISearch:
 
             results = []
             for r in data.get("organic_results", [])[:max_results]:
-                results.append(SearchResult(
-                    title=r.get("title", ""),
-                    url=r.get("link", ""),
-                    content=r.get("snippet", ""),
-                    score=0.7,  # SerpAPI doesn't provide relevance scores
-                ))
+                results.append(
+                    SearchResult(
+                        title=r.get("title", ""),
+                        url=r.get("link", ""),
+                        content=r.get("snippet", ""),
+                        score=0.7,  # SerpAPI doesn't provide relevance scores
+                    )
+                )
             return results
 
         except httpx.HTTPStatusError as e:

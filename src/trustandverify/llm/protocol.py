@@ -28,7 +28,9 @@ class LLMBackend(Protocol):
         """
         ...
 
-    async def complete_json(self, prompt: str, system: str = "", defaults: dict | None = None) -> dict:
+    async def complete_json(
+        self, prompt: str, system: str = "", defaults: dict | None = None
+    ) -> dict:
         """Send a prompt and return parsed JSON.
 
         Implementations must handle LLM responses that include markdown

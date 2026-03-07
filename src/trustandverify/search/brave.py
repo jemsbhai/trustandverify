@@ -46,12 +46,14 @@ class BraveSearch:
 
             results = []
             for r in data.get("web", {}).get("results", [])[:max_results]:
-                results.append(SearchResult(
-                    title=r.get("title", ""),
-                    url=r.get("url", ""),
-                    content=r.get("description", ""),
-                    score=float(r.get("score", 0.7)),
-                ))
+                results.append(
+                    SearchResult(
+                        title=r.get("title", ""),
+                        url=r.get("url", ""),
+                        content=r.get("description", ""),
+                        score=float(r.get("score", 0.7)),
+                    )
+                )
             return results
 
         except httpx.HTTPStatusError as e:

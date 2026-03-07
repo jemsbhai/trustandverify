@@ -9,9 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from jsonld_ex.confidence_algebra import Opinion
 
-from trustandverify.core.models import Claim, Conflict, Evidence, Report, Source, Verdict
+from trustandverify.core.models import Claim, Evidence, Report, Source, Verdict
 from trustandverify.storage.sqlite import _report_to_dict
-
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
 
@@ -54,12 +53,14 @@ def _make_report() -> Report:
 class TestPostgresStorage:
     def test_is_available_with_dsn(self):
         from trustandverify.storage.postgres import PostgresStorage
+
         storage = PostgresStorage(dsn="postgresql://localhost/test")
         assert storage.is_available() is True
 
     def test_is_available_without_dsn(self, monkeypatch):
         monkeypatch.delenv("POSTGRES_DSN", raising=False)
         from trustandverify.storage.postgres import PostgresStorage
+
         storage = PostgresStorage(dsn="")
         assert storage.is_available() is False
 
@@ -120,11 +121,16 @@ class TestPostgresStorage:
         report_data = json.dumps(_report_to_dict(report))
 
         mock_conn = AsyncMock()
-        mock_conn.fetch = AsyncMock(return_value=[
-            {"id": "test-report-1", "query": "Is coffee healthy?",
-             "created_at": datetime(2025, 6, 1, tzinfo=timezone.utc),
-             "data": report_data},
-        ])
+        mock_conn.fetch = AsyncMock(
+            return_value=[
+                {
+                    "id": "test-report-1",
+                    "query": "Is coffee healthy?",
+                    "created_at": datetime(2025, 6, 1, tzinfo=timezone.utc),
+                    "data": report_data,
+                },
+            ]
+        )
 
         mock_ctx = AsyncMock()
         mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
@@ -202,12 +208,14 @@ class TestPostgresStorage:
 class TestNeo4jStorage:
     def test_is_available_with_password(self):
         from trustandverify.storage.neo4j import Neo4jStorage
+
         storage = Neo4jStorage(password="secret")
         assert storage.is_available() is True
 
     def test_is_available_without_password(self, monkeypatch):
         monkeypatch.delenv("NEO4J_PASSWORD", raising=False)
         from trustandverify.storage.neo4j import Neo4jStorage
+
         storage = Neo4jStorage(password="")
         assert storage.is_available() is False
 
@@ -270,10 +278,16 @@ class TestNeo4jStorage:
         report_data = json.dumps(_report_to_dict(report))
 
         mock_result = AsyncMock()
-        mock_result.data = AsyncMock(return_value=[
-            {"id": "test-report-1", "query": "Is coffee healthy?",
-             "created_at": "2025-06-01T12:00:00+00:00", "data": report_data},
-        ])
+        mock_result.data = AsyncMock(
+            return_value=[
+                {
+                    "id": "test-report-1",
+                    "query": "Is coffee healthy?",
+                    "created_at": "2025-06-01T12:00:00+00:00",
+                    "data": report_data,
+                },
+            ]
+        )
 
         mock_session = AsyncMock()
         mock_session.run = AsyncMock(return_value=mock_result)
@@ -342,6 +356,7 @@ class TestNeo4jStorage:
 class TestMongoStorage:
     def test_is_available(self):
         from trustandverify.storage.mongo import MongoStorage
+
         storage = MongoStorage(uri="mongodb://localhost:27017")
         assert storage.is_available() is True
 
@@ -398,12 +413,16 @@ class TestMongoStorage:
             def __init__(self, docs):
                 self._docs = list(docs)
                 self._index = 0
+
             def sort(self, *a, **kw):
                 return self
+
             def limit(self, *a, **kw):
                 return self
+
             def __aiter__(self):
                 return self
+
             async def __anext__(self):
                 if self._index >= len(self._docs):
                     raise StopAsyncIteration
@@ -430,6 +449,7 @@ class TestMongoStorage:
         class EmptyAsyncIter:
             def __aiter__(self):
                 return self
+
             async def __anext__(self):
                 raise StopAsyncIteration
 
@@ -473,8 +493,10 @@ class TestMongoStorage:
             def __init__(self, docs):
                 self._docs = list(docs)
                 self._i = 0
+
             def __aiter__(self):
                 return self
+
             async def __anext__(self):
                 if self._i >= len(self._docs):
                     raise StopAsyncIteration
@@ -520,7 +542,7 @@ class TestMongoStorage:
 
         with patch.dict("sys.modules", {"motor": mock_module, "motor.motor_asyncio": mock_motor}):
             storage = MongoStorage()
-            col = storage._get_collection()
+            storage._get_collection()
             mock_motor.AsyncIOMotorClient.assert_called_once()
 
 
@@ -530,6 +552,7 @@ class TestMongoStorage:
 class TestRedisStorage:
     def test_is_available(self):
         from trustandverify.storage.redis import RedisStorage
+
         storage = RedisStorage(url="redis://localhost:6379")
         assert storage.is_available() is True
 
@@ -615,9 +638,7 @@ class TestRedisStorage:
         mock_client.rpush = AsyncMock(
             side_effect=lambda k, v: stored_lists.setdefault(k, []).append(v)
         )
-        mock_client.lrange = AsyncMock(
-            side_effect=lambda k, start, end: stored_lists.get(k, [])
-        )
+        mock_client.lrange = AsyncMock(side_effect=lambda k, start, end: stored_lists.get(k, []))
 
         storage = RedisStorage()
         storage._client = mock_client
@@ -651,5 +672,5 @@ class TestRedisStorage:
 
         with patch.dict("sys.modules", {"redis": mock_module, "redis.asyncio": mock_redis}):
             storage = RedisStorage()
-            client = await storage._get_client()
+            await storage._get_client()
             mock_redis.from_url.assert_called_once()

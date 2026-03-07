@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import (
+    _claim_to_dict,
+    _dict_to_claim,
+    _dict_to_report,
+    _report_to_dict,
+)
 
 
 class MongoStorage:
@@ -27,6 +31,7 @@ class MongoStorage:
         database: str = "trustandverify",
     ) -> None:
         import os
+
         self._uri = uri or os.environ.get("MONGO_URI", "mongodb://localhost:27017")
         self._database = database
         self._client = None
@@ -37,8 +42,7 @@ class MongoStorage:
                 import motor.motor_asyncio as motor  # type: ignore[import]
             except ImportError as e:
                 raise ImportError(
-                    "MongoStorage requires motor. "
-                    "Install with: pip install trustandverify[mongo]"
+                    "MongoStorage requires motor. Install with: pip install trustandverify[mongo]"
                 ) from e
             self._client = motor.AsyncIOMotorClient(self._uri)
         return self._client[self._database]["reports"]
@@ -71,12 +75,16 @@ class MongoStorage:
         cursor = cursor.sort("created_at", -1).limit(limit)
         summaries = []
         async for doc in cursor:
-            summaries.append(ReportSummary(
-                id=doc["_id"],
-                query=doc.get("query", ""),
-                created_at=datetime.fromisoformat(doc.get("created_at", datetime.now(timezone.utc).isoformat())),
-                num_claims=len(doc.get("claims", [])),
-            ))
+            summaries.append(
+                ReportSummary(
+                    id=doc["_id"],
+                    query=doc.get("query", ""),
+                    created_at=datetime.fromisoformat(
+                        doc.get("created_at", datetime.now(timezone.utc).isoformat())
+                    ),
+                    num_claims=len(doc.get("claims", [])),
+                )
+            )
         return summaries
 
     async def save_claim(self, claim: Claim, query_id: str) -> str:

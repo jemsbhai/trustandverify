@@ -16,7 +16,6 @@ Usage from Jac::
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import Any
 
 from trustandverify.core.agent import TrustAgent
@@ -163,21 +162,26 @@ def _make_search(backend: str) -> object:
     backend = backend.lower().strip()
     if backend == "tavily":
         from trustandverify.search.tavily import TavilySearch
+
         return TavilySearch()
     elif backend == "brave":
         from trustandverify.search.brave import BraveSearch
+
         return BraveSearch()
     elif backend == "bing":
         from trustandverify.search.bing import BingSearch
+
         return BingSearch()
     elif backend == "serpapi":
         from trustandverify.search.serpapi import SerpAPISearch
+
         return SerpAPISearch()
     elif backend == "multi":
-        from trustandverify.search.brave import BraveSearch
         from trustandverify.search.bing import BingSearch
+        from trustandverify.search.brave import BraveSearch
         from trustandverify.search.multi import MultiSearch
         from trustandverify.search.tavily import TavilySearch
+
         backends = [b for b in [TavilySearch(), BraveSearch(), BingSearch()] if b.is_available()]
         if not backends:
             raise RuntimeError("No search backends available. Set at least one API key.")
@@ -185,7 +189,9 @@ def _make_search(backend: str) -> object:
             return backends[0]
         return MultiSearch(backends)
     else:
-        raise ValueError(f"Unknown search backend: {backend!r}. Choose from: tavily, brave, bing, serpapi, multi")
+        raise ValueError(
+            f"Unknown search backend: {backend!r}. Choose from: tavily, brave, bing, serpapi, multi"
+        )
 
 
 def _make_llm(backend: str) -> object:
@@ -193,18 +199,24 @@ def _make_llm(backend: str) -> object:
     backend = backend.lower().strip()
     if backend == "gemini":
         from trustandverify.llm.gemini import GeminiBackend
+
         return GeminiBackend()
     elif backend == "openai":
         from trustandverify.llm.openai import OpenAIBackend
+
         return OpenAIBackend()
     elif backend == "anthropic":
         from trustandverify.llm.anthropic import AnthropicBackend
+
         return AnthropicBackend()
     elif backend == "ollama":
         from trustandverify.llm.ollama import OllamaBackend
+
         return OllamaBackend()
     else:
-        raise ValueError(f"Unknown LLM backend: {backend!r}. Choose from: gemini, openai, anthropic, ollama")
+        raise ValueError(
+            f"Unknown LLM backend: {backend!r}. Choose from: gemini, openai, anthropic, ollama"
+        )
 
 
 def _make_storage(backend: str, db_path: str) -> object:
@@ -212,9 +224,11 @@ def _make_storage(backend: str, db_path: str) -> object:
     backend = backend.lower().strip()
     if backend == "memory":
         from trustandverify.storage.memory import InMemoryStorage
+
         return InMemoryStorage()
     elif backend == "sqlite":
         from trustandverify.storage.sqlite import SQLiteStorage
+
         return SQLiteStorage(db_path)
     else:
         raise ValueError(f"Unknown storage backend: {backend!r}. Choose from: memory, sqlite")
@@ -225,18 +239,24 @@ def _make_exporter(format: str) -> object:
     format = format.lower().strip()
     if format == "jsonld":
         from trustandverify.export.jsonld import JsonLdExporter
+
         return JsonLdExporter()
     elif format in ("markdown", "md"):
         from trustandverify.export.markdown import MarkdownExporter
+
         return MarkdownExporter()
     elif format == "html":
         from trustandverify.export.html import HtmlExporter
+
         return HtmlExporter()
     elif format == "pdf":
         from trustandverify.export.pdf import PdfExporter
+
         return PdfExporter()
     else:
-        raise ValueError(f"Unknown export format: {format!r}. Choose from: jsonld, markdown, html, pdf")
+        raise ValueError(
+            f"Unknown export format: {format!r}. Choose from: jsonld, markdown, html, pdf"
+        )
 
 
 # ── Serialisation helpers ──────────────────────────────────────────────────────
@@ -260,7 +280,9 @@ def _report_to_dict(report: Report) -> dict:
                     "uncertainty": c.opinion.uncertainty,
                     "base_rate": c.opinion.base_rate,
                     "projected_probability": c.opinion.projected_probability(),
-                } if c.opinion else None,
+                }
+                if c.opinion
+                else None,
                 "evidence": [
                     {
                         "text": e.text,
@@ -293,7 +315,9 @@ def _report_to_dict(report: Report) -> dict:
 def _dict_to_report(data: dict) -> Report:
     """Convert a plain dict back to a Report for export."""
     from datetime import datetime
+
     from jsonld_ex.confidence_algebra import Opinion
+
     from trustandverify.core.models import Claim, Conflict, Evidence, Source, Verdict
 
     claims = []
@@ -310,25 +334,29 @@ def _dict_to_report(data: dict) -> Report:
         evidence = []
         for ed in cd.get("evidence", []):
             sd = ed.get("source", {})
-            evidence.append(Evidence(
-                text=ed["text"],
-                supports_claim=ed["supports_claim"],
-                relevance=ed["relevance"],
-                confidence_raw=ed["confidence_raw"],
-                source=Source(
-                    url=sd.get("url", ""),
-                    title=sd.get("title", ""),
-                    content_snippet="",
-                    trust_score=sd.get("trust_score", 0.5),
-                ),
-            ))
-        claims.append(Claim(
-            text=cd["text"],
-            verdict=Verdict(cd.get("verdict", "no_evidence")),
-            assessment=cd.get("assessment", ""),
-            opinion=op,
-            evidence=evidence,
-        ))
+            evidence.append(
+                Evidence(
+                    text=ed["text"],
+                    supports_claim=ed["supports_claim"],
+                    relevance=ed["relevance"],
+                    confidence_raw=ed["confidence_raw"],
+                    source=Source(
+                        url=sd.get("url", ""),
+                        title=sd.get("title", ""),
+                        content_snippet="",
+                        trust_score=sd.get("trust_score", 0.5),
+                    ),
+                )
+            )
+        claims.append(
+            Claim(
+                text=cd["text"],
+                verdict=Verdict(cd.get("verdict", "no_evidence")),
+                assessment=cd.get("assessment", ""),
+                opinion=op,
+                evidence=evidence,
+            )
+        )
 
     conflicts = [
         Conflict(
@@ -346,5 +374,7 @@ def _dict_to_report(data: dict) -> Report:
         claims=claims,
         conflicts=conflicts,
         summary=data.get("summary", ""),
-        created_at=datetime.fromisoformat(data["created_at"]) if "created_at" in data else datetime.now(),
+        created_at=datetime.fromisoformat(data["created_at"])
+        if "created_at" in data
+        else datetime.now(),
     )

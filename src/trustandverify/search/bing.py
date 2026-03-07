@@ -41,12 +41,14 @@ class BingSearch:
 
             results = []
             for r in data.get("webPages", {}).get("value", [])[:max_results]:
-                results.append(SearchResult(
-                    title=r.get("name", ""),
-                    url=r.get("url", ""),
-                    content=r.get("snippet", ""),
-                    score=0.7,
-                ))
+                results.append(
+                    SearchResult(
+                        title=r.get("name", ""),
+                        url=r.get("url", ""),
+                        content=r.get("snippet", ""),
+                        score=0.7,
+                    )
+                )
             return results
 
         except httpx.HTTPStatusError as e:

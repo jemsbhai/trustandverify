@@ -41,8 +41,7 @@ class RedisCache:
                 from redis.asyncio import from_url  # type: ignore[import]
             except ImportError as e:
                 raise ImportError(
-                    "RedisCache requires redis. "
-                    "Install with: pip install trustandverify[redis]"
+                    "RedisCache requires redis. Install with: pip install trustandverify[redis]"
                 ) from e
             self._client = await from_url(self._url, decode_responses=True)
         return self._client

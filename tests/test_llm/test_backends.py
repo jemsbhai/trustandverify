@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import AsyncMock
 
 from trustandverify.llm.anthropic import AnthropicBackend
 from trustandverify.llm.ollama import OllamaBackend
 from trustandverify.llm.openai import OpenAIBackend
 
-
 # ── OpenAIBackend ──────────────────────────────────────────────────────────────
+
 
 class TestOpenAIBackend:
     def test_is_available_with_key(self):
@@ -54,6 +52,7 @@ class TestOpenAIBackend:
 
 # ── AnthropicBackend ───────────────────────────────────────────────────────────
 
+
 class TestAnthropicBackend:
     def test_is_available_with_key(self):
         assert AnthropicBackend(api_key="sk-ant-fake").is_available() is True
@@ -81,6 +80,7 @@ class TestAnthropicBackend:
 
 
 # ── OllamaBackend ──────────────────────────────────────────────────────────────
+
 
 class TestOllamaBackend:
     def test_is_available_always_true(self):

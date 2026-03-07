@@ -32,8 +32,7 @@ class OpenAIBackend:
             from openai import AsyncOpenAI  # type: ignore[import]
         except ImportError as e:
             raise ImportError(
-                "OpenAIBackend requires openai. "
-                "Install with: pip install trustandverify[openai]"
+                "OpenAIBackend requires openai. Install with: pip install trustandverify[openai]"
             ) from e
 
         client = AsyncOpenAI(api_key=self._api_key)
@@ -48,6 +47,8 @@ class OpenAIBackend:
         )
         return str(response.choices[0].message.content)
 
-    async def complete_json(self, prompt: str, system: str = "", defaults: dict | None = None) -> dict:
+    async def complete_json(
+        self, prompt: str, system: str = "", defaults: dict | None = None
+    ) -> dict:
         raw = await self.complete(prompt, system=system)
         return _parse_json_robust(raw, defaults=defaults or {})

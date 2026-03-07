@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from jsonld_ex.confidence_algebra import Opinion
 
 from trustandverify.scoring.fusion import (
@@ -230,6 +229,7 @@ class TestDiagnoseByzantine:
         ]
         # Should recommend at low threshold
         low = diagnose_byzantine(ops, threshold=0.05)
+        assert low["recommended"] is True
         # Should not recommend at very high threshold
         high = diagnose_byzantine(ops, threshold=0.9)
         assert high["recommended"] is False

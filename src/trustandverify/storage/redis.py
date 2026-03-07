@@ -6,11 +6,16 @@ import json
 from datetime import datetime, timezone
 
 from trustandverify.core.models import Claim, Report, ReportSummary
-from trustandverify.storage.sqlite import _claim_to_dict, _dict_to_claim, _dict_to_report, _report_to_dict
+from trustandverify.storage.sqlite import (
+    _claim_to_dict,
+    _dict_to_claim,
+    _dict_to_report,
+    _report_to_dict,
+)
 
 _REPORT_KEY = "tv:report:{id}"
-_INDEX_KEY = "tv:reports:index"          # Sorted set: score=timestamp, member=id
-_CLAIMS_KEY = "tv:claims:{query_id}"    # List of JSON-encoded claim dicts
+_INDEX_KEY = "tv:reports:index"  # Sorted set: score=timestamp, member=id
+_CLAIMS_KEY = "tv:claims:{query_id}"  # List of JSON-encoded claim dicts
 
 
 class RedisStorage:
@@ -28,6 +33,7 @@ class RedisStorage:
 
     def __init__(self, url: str | None = None, ttl: int | None = None) -> None:
         import os
+
         self._url = url or os.environ.get("REDIS_URL", "redis://localhost:6379")
         self._ttl = ttl
         self._client = None
@@ -38,8 +44,7 @@ class RedisStorage:
                 from redis.asyncio import from_url  # type: ignore[import]
             except ImportError as e:
                 raise ImportError(
-                    "RedisStorage requires redis. "
-                    "Install with: pip install trustandverify[redis]"
+                    "RedisStorage requires redis. Install with: pip install trustandverify[redis]"
                 ) from e
             self._client = await from_url(self._url, decode_responses=True)
         return self._client
@@ -77,12 +82,16 @@ class RedisStorage:
             if not raw:
                 continue
             data = json.loads(raw)
-            summaries.append(ReportSummary(
-                id=data["id"],
-                query=data.get("query", ""),
-                created_at=datetime.fromisoformat(data.get("created_at", datetime.now(timezone.utc).isoformat())),
-                num_claims=len(data.get("claims", [])),
-            ))
+            summaries.append(
+                ReportSummary(
+                    id=data["id"],
+                    query=data.get("query", ""),
+                    created_at=datetime.fromisoformat(
+                        data.get("created_at", datetime.now(timezone.utc).isoformat())
+                    ),
+                    num_claims=len(data.get("claims", [])),
+                )
+            )
         return summaries
 
     async def save_claim(self, claim: Claim, query_id: str) -> str:

@@ -27,8 +27,7 @@ class PdfExporter:
             from weasyprint import HTML  # type: ignore[import]
         except ImportError as e:
             raise ImportError(
-                "PdfExporter requires weasyprint. "
-                "Install with: pip install trustandverify[pdf]"
+                "PdfExporter requires weasyprint. Install with: pip install trustandverify[pdf]"
             ) from e
 
         html_str = HtmlExporter().render(report)

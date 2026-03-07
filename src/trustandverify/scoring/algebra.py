@@ -16,7 +16,7 @@ from trustandverify.scoring.fusion import (
     fuse_evidence_byzantine,
 )
 from trustandverify.scoring.opinions import flip_opinion, opinion_summary, scalar_to_opinion
-from trustandverify.scoring.trust import apply_trust_discount, estimate_source_trust
+from trustandverify.scoring.trust import apply_trust_discount
 
 __all__ = ["score_claim", "build_evidence_opinion"]
 
@@ -134,8 +134,6 @@ def score_claim(
     }
     verdict = verdict_map.get(summary["verdict"], Verdict.NO_EVIDENCE)
 
-    conflict = detect_conflicts_within_claim(
-        supporting_ops, contradicting_ops, conflict_threshold
-    )
+    conflict = detect_conflicts_within_claim(supporting_ops, contradicting_ops, conflict_threshold)
 
     return fused, verdict, conflict, meta

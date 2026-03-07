@@ -48,6 +48,8 @@ class AnthropicBackend:
         response = await client.messages.create(**kwargs)
         return str(response.content[0].text)
 
-    async def complete_json(self, prompt: str, system: str = "", defaults: dict | None = None) -> dict:
+    async def complete_json(
+        self, prompt: str, system: str = "", defaults: dict | None = None
+    ) -> dict:
         raw = await self.complete(prompt, system=system)
         return _parse_json_robust(raw, defaults=defaults or {})

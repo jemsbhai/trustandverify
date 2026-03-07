@@ -73,17 +73,17 @@ class TestFileCache:
 
     async def test_cache_dir_created(self, tmp_path):
         dir_path = tmp_path / "deep" / "nested" / "cache"
-        cache = FileCache(cache_dir=str(dir_path))
+        FileCache(cache_dir=str(dir_path))
         assert dir_path.exists()
 
     async def test_set_write_error_does_not_raise(self, tmp_path, capsys):
         """If the cache dir becomes unwritable, set should print warning, not raise."""
         cache = FileCache(cache_dir=str(tmp_path / "cache"), default_ttl=3600)
         # Override _path to return an invalid path
-        original_path = cache._path
 
         def bad_path(key):
             from pathlib import Path
+
             return Path("/nonexistent/dir/that/does/not/exist/file.json")
 
         cache._path = bad_path

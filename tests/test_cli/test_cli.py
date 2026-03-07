@@ -6,7 +6,6 @@ from contextlib import ExitStack
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
-import pytest
 from jsonld_ex.confidence_algebra import Opinion
 from typer.testing import CliRunner
 
@@ -68,14 +67,19 @@ def _cli_env(report):
     stack.enter_context(patch("trustandverify.cli.main.asyncio.run", return_value=report))
     # Mock verify as a regular function (not async) so no unawaited coroutine is created
     stack.enter_context(patch("trustandverify.core.agent.TrustAgent.verify", return_value=report))
-    stack.enter_context(patch("trustandverify.search.tavily.TavilySearch.is_available", return_value=True))
-    stack.enter_context(patch("trustandverify.llm.gemini.GeminiBackend.is_available", return_value=True))
+    stack.enter_context(
+        patch("trustandverify.search.tavily.TavilySearch.is_available", return_value=True)
+    )
+    stack.enter_context(
+        patch("trustandverify.llm.gemini.GeminiBackend.is_available", return_value=True)
+    )
     return stack
 
 
 class TestMainEntrypoint:
     def test_main_calls_app(self):
         from trustandverify.cli.main import main
+
         with patch("trustandverify.cli.main.app") as mock_app:
             main()
             mock_app.assert_called_once()
@@ -121,9 +125,7 @@ class TestVerifyCommand:
         monkeypatch.setenv("GEMINI_API_KEY", "fake")
         output_file = str(tmp_path / "report.jsonld")
         with _cli_env(_make_report()):
-            result = runner.invoke(app, [
-                "verify", "Is coffee healthy?", "--output", output_file
-            ])
+            result = runner.invoke(app, ["verify", "Is coffee healthy?", "--output", output_file])
         assert result.exit_code == 0
         assert "report written to" in result.output
         assert (tmp_path / "report.jsonld").exists()
@@ -133,9 +135,10 @@ class TestVerifyCommand:
         monkeypatch.setenv("GEMINI_API_KEY", "fake")
         output_file = str(tmp_path / "report.md")
         with _cli_env(_make_report()):
-            result = runner.invoke(app, [
-                "verify", "Is coffee healthy?", "--format", "markdown", "--output", output_file
-            ])
+            result = runner.invoke(
+                app,
+                ["verify", "Is coffee healthy?", "--format", "markdown", "--output", output_file],
+            )
         assert result.exit_code == 0
         content = (tmp_path / "report.md").read_text(encoding="utf-8")
         assert "# TrustGraph" in content
@@ -145,9 +148,9 @@ class TestVerifyCommand:
         monkeypatch.setenv("GEMINI_API_KEY", "fake")
         output_file = str(tmp_path / "report.html")
         with _cli_env(_make_report()):
-            result = runner.invoke(app, [
-                "verify", "Is coffee healthy?", "--format", "html", "--output", output_file
-            ])
+            result = runner.invoke(
+                app, ["verify", "Is coffee healthy?", "--format", "html", "--output", output_file]
+            )
         assert result.exit_code == 0
         content = (tmp_path / "report.html").read_text(encoding="utf-8")
         assert "<!DOCTYPE html>" in content
@@ -156,18 +159,16 @@ class TestVerifyCommand:
         monkeypatch.setenv("TAVILY_API_KEY", "fake")
         monkeypatch.setenv("GEMINI_API_KEY", "fake")
         with _cli_env(_make_report()):
-            result = runner.invoke(app, [
-                "verify", "Is coffee healthy?", "--format", "xyz", "--output", "out.txt"
-            ])
+            result = runner.invoke(
+                app, ["verify", "Is coffee healthy?", "--format", "xyz", "--output", "out.txt"]
+            )
         assert result.exit_code == 1
 
     def test_verify_with_claims_option(self, monkeypatch):
         monkeypatch.setenv("TAVILY_API_KEY", "fake")
         monkeypatch.setenv("GEMINI_API_KEY", "fake")
         with _cli_env(_make_report()):
-            result = runner.invoke(app, [
-                "verify", "Is coffee healthy?", "--claims", "5"
-            ])
+            result = runner.invoke(app, ["verify", "Is coffee healthy?", "--claims", "5"])
         assert result.exit_code == 0
 
     def test_verify_no_conflicts(self, monkeypatch):
@@ -194,6 +195,7 @@ class TestVerifyCommand:
 class TestUiCommand:
     def test_streamlit_not_installed(self):
         import builtins
+
         real_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
@@ -214,7 +216,7 @@ class TestUiCommand:
         with (
             patch.dict("sys.modules", {"streamlit": mock_streamlit}),
             patch("importlib.resources.files", return_value=mock_files),
-            patch("subprocess.run") as mock_run,
+            patch("subprocess.run"),
         ):
             result = runner.invoke(app, ["ui"])
         assert result.exit_code == 0
