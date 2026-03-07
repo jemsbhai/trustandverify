@@ -41,6 +41,23 @@ class TestVerifyOneLiner:
             assert result is mock_report
             instance.verify.assert_called_once_with("Is coffee healthy?", verbose=True)
 
+    async def test_verify_propagates_num_claims(self):
+        """verify(num_claims=N) must pass TrustConfig(num_claims=N) to TrustAgent."""
+        mock_report = MagicMock(spec=Report)
+
+        with patch("trustandverify.TrustAgent") as MockAgent:
+            instance = MockAgent.return_value
+            instance.verify = AsyncMock(return_value=mock_report)
+
+            from trustandverify import verify
+            await verify("q", num_claims=7)
+
+            # Verify TrustAgent was constructed with the right config
+            call_kwargs = MockAgent.call_args
+            config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
+            assert config is not None, "TrustConfig not passed to TrustAgent"
+            assert config.num_claims == 7, f"Expected num_claims=7, got {config.num_claims}"
+
 
 # ── core/agent.py: cache=None + enable_cache=True default branch ─────────────
 
