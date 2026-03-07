@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trustandverify"
-version = "0.2.0"
+version = "0.2.1"
 description = "Agentic knowledge verification using Subjective Logic confidence algebra"
 authors = ["Muntaser Syed <jemsbhai@gmail.com>"]
 license = "MIT"
